@@ -47,8 +47,8 @@
 											<v-img :src="imgUrl" 
 												v-if="validation.fillImage"
 												class="rounded-lg" 
-												max-width="350" 
-												max-height="320">												
+												width="350" 
+												height="320">												
 											</v-img>
 
 										</v-container>
@@ -113,7 +113,7 @@
 
 						<v-col md="6">
 							<v-card
-								class="pa-2"								
+								class="pa-2 scroll"								
 								tile>
 
 								<v-toolbar
@@ -122,25 +122,44 @@
 
 									<v-toolbar-title>Lista de recomendaciones</v-toolbar-title>
 
-								</v-toolbar>
+								</v-toolbar>				
 
-								<v-list subheader>
+								<v-list subheader v-if="suggestedSongsReady">
 									
-									<v-subheader left>Artistas</v-subheader>				
+									<v-container fluid>										
+
+										<v-row>
+											<v-col>
+												<v-btn @click="clearSuggestedSongs()">Limpiar lista de sugerencias</v-btn>
+											</v-col>
+										</v-row>
+
+										<v-row>
+											<v-col>
+												<v-subheader><h3>Artistas</h3></v-subheader>
+											</v-col>
+											<v-col>
+												<v-subheader><h3>Canciones</h3></v-subheader>
+											</v-col>
+										</v-row>	
+
+										<v-divider></v-divider>																			
+									</v-container>
 
 									<v-list-item
-										v-for="person in people"
-										:key="person.id">
+										v-for="suggestSong in suggestedSongs"
+										:key="suggestSong.id">
 											
+										<!--
 										<v-list-item-avatar>
 											<v-img
-												:alt="`${person.name} avatar`"
-												:src="person.img">
+												:alt="`${suggestedSongs.name} avatar`"
+												:src="suggestedSongs.img">
 											</v-img>									
-										</v-list-item-avatar>
+										</v-list-item-avatar>-->
 
 										<v-list-item-content>
-											<v-list-item-title v-text="person.name"></v-list-item-title>
+											<v-list-item-title v-text="suggestSong.name"></v-list-item-title>
 										</v-list-item-content>
 
 										<!--
@@ -149,8 +168,8 @@
 										</v-list-item-content>-->
 
 										<v-list-item-content>
-												<iframe src="https://open.spotify.com/embed/album/7FTxFwUINuVrG6ntIaR6Qq?highlight=spotify:track:6DonFmvUg9f2aPWIx39JIL" 
-													width="500" height="200" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>
+												<iframe :src="suggestSong.link"
+													width="500" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>
 										</v-list-item-content>
 
 									
@@ -207,6 +226,7 @@ export default {
 			file: null,
 			checkboxes: [],
 			imgUrl: null,
+			suggestedSongsReady: false,
 			validation: {
 
 				fillImage: false,
@@ -217,10 +237,6 @@ export default {
 
 				imageFile => this.validateContent(imageFile) || this.displayErrorSize()			
 			],
-			/*checkboxRules: [
-
-				checkbox => this.validateCheckboxContent(checkbox)
-			],*/
 			genders: [
 
 				'pop',
@@ -233,31 +249,14 @@ export default {
 				'chill',
 				'progressive-house'
 			],
-			people: [
-				{
-					id: 1,
-					name: 'CFCF',
-					song: 'Test',
-					link: 'https://open.spotify.com/album/7FTxFwUINuVrG6ntIaR6Qq?highlight=spotify:track:6DonFmvUg9f2aPWIx39JIL',
-					img: 'https://cdn.vuetifyjs.com/images/lists/1.jpg',
-					active: true
-				},
-				{
-					id: 2,
-					name: 'CFCF',
-					song: 'Test',
-					link: 'https://open.spotify.com/album/7FTxFwUINuVrG6ntIaR6Qq?highlight=spotify:track:6DonFmvUg9f2aPWIx39JIL',
-					img: 'https://cdn.vuetifyjs.com/images/lists/1.jpg',
-					active: true
-				}
-			]
+			suggestedSongs: []
 		}
 	},
 	methods: {
 
 		validateContent(imageFile) {
 
-			if (imageFile && imageFile.size < 5000000) {
+			if (imageFile && imageFile.size < 10000000) {
 
 				this.validation.fillImage = true;
 
@@ -278,7 +277,7 @@ export default {
 
 			this.validation.fillImage = false;
 
-			return "La imagen no puede pesar más de 5MB";
+			return "La imagen no puede pesar más de 10MB";
 		},
 		/*validateCheckboxContent(checkbox) {
 
@@ -309,17 +308,23 @@ export default {
 
 			this.file = null;
 		},
+		clearSuggestedSongs() {
+
+			this.suggestedSongs = [];
+
+			//this.suggestedSongsReady = false;
+		},
 		submit() {			
 
 			let data = {imgFile: this.file, genders: this.checkboxes};
 
-			this.doAPICalls(data);			
+			this.doAPICalls(data);					
 		},
 		async doAPICalls(data) {
 
-			let emotions;
+			//let emotions;
 
-			try {
+			/*try {
 
 				let responseAzure = await this.requestAPIAzure(data.imgFile);
 
@@ -332,22 +337,68 @@ export default {
 			} catch (error) {
 
 				console.log(error);
-			}
+			}*/
 
 			
-			let dataRecommendation = this.getDataRecommendation(emotions, data.genders);
+			//let dataRecommendation = this.getDataRecommendation(emotions, data.genders);
 
-			console.log(dataRecommendation);
+			//console.log(dataRecommendation);
 
-			/*
+			const genders = data.genders.toString();
+
+			let dataRecommendation = {
+
+				limit: 8,
+				seed_genres: genders, 
+				min_danceability: 0.0,
+				max_danceability: 1.0,
+				min_energy: 0.0,
+				max_energy: 1.0,
+				min_liveness: 0.0,
+				max_liveness: 1.0,
+				//max_popularity: 1.0,
+				minTempo: 0.50,
+				maxTempo: 1.0
+			};
+
+			
 			try {
 
-				let responseSpotify = await requestAPISpotify(dataRecommendation);
+				let responseSpotify = await this.requestAPISpotify(dataRecommendation);
+
+				//tracks is an array.
+				//let artistName = responseSpotify.data.tracks[0].artists[0].name;
+				//let albumName  = responseSpotify.data.tracks[0].album.name;
+				//let uriSong    = responseSpotify.data.tracks[0].uri;
+				//let songName   = responseSpotify.data.tracks[0].name;
+				//let preUrl = responseSpotify.data.tracks[0].external_urls.spotify;
+				
+				//https://open.spotify.com/track/...
+
+				//console.log(responseSpotify.data.tracks);
+
+				let tracks = responseSpotify.data.tracks;
+
+				for (let i = 0; i < tracks.length; i++) {					
+
+					let urlSong = tracks[i].external_urls.spotify.slice(0, 25) + 'embed/' + tracks[i].external_urls.spotify.slice(25);
+
+					this.suggestedSongs.push({
+
+						id: i,
+						name: tracks[i].name,
+						link: urlSong
+					});
+				}		
+				
+				this.suggestedSongsReady = true;
+
+				//console.log(this.suggestedSongs);
 
 			} catch (error) {
 
-				console.log(error);
-			}*/
+				console.log(error);			
+			}
 			
 		},
 		getDataRecommendation(emotions, genders) {
@@ -390,9 +441,9 @@ export default {
 		},
 		requestAPISpotify(dataRecommendationParams) {
 
-			const AUTH_STR = 'Bearer '.concat('USER-TOKEN');
+			const AUTH_STR = 'Bearer '.concat('BQBoC_Lmp3D2ckArp_ezpAVXzMB0AmYrssMaPpYbQEQ4xqv3FsXOAfoUDjDsgUUwYeLJEF5o8VZnhnso1v0');
 
-			let config = {
+			const config = {
 
 				headers: {
 
@@ -414,4 +465,11 @@ export default {
 
 
 <style scoped>
+
+.scroll {
+
+	overflow-y: auto;
+	height: 822px;
+}
+
 </style>
