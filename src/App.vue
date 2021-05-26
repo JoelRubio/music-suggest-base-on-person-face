@@ -2,7 +2,7 @@
 	<div class="app">
 
 		<v-app>
-
+			
 			<v-toolbar
 				color="#78909C"
 				dark>															
@@ -10,6 +10,7 @@
 				<v-toolbar-title>Recomendaciones de música a partir del rostro de una persona</v-toolbar-title>
 
 			</v-toolbar>
+
 			<v-main>
 				
 				<v-container fluid class="grey lighten-5">
@@ -17,9 +18,9 @@
 						
 						<v-col md="6">
 							<v-card
-								class="pa-2"
-								tile>							
-
+								rounded
+								class="pa-2">							
+								
 								<v-toolbar
 									color="purple"
 									dark>															
@@ -44,12 +45,19 @@
 												label="Rostro">
 											</v-file-input>
 
-											<v-img :src="imgUrl" 
-												v-if="validation.fillImage"
+											<v-img :src="imgUrl" v-if="validation.fillImage"
 												class="rounded-lg" 
 												width="350" 
 												height="320">												
 											</v-img>
+
+											<!--
+											<v-card-text v-if="validation.fillImage">
+
+												<h3>Test</h3>
+
+											</v-card-text>
+											-->
 
 										</v-container>
 										
@@ -69,8 +77,7 @@
 														<v-checkbox light 
 															:label=gender 
 															:value=gender 
-															v-model="checkboxes"
-															>
+															v-model="checkboxes">															
 														</v-checkbox>
 													</v-flex>
 												</v-layout>						
@@ -83,15 +90,13 @@
 									<v-card flat>
 										<v-container fluid>
 
-											<v-btn
-												
+											<v-btn												
 												rounded
 												elevation="4"
 												color="#3E68D6"
-												class="ma-2 white--text"
-												@click="submit()"
-												:disabled="!validation.imageValid"
-												>							
+												class="ma-2 white--text"												
+												:disabled="blockSubmitButton"
+												@click="submit()">
 												Realizar búsqueda											
 											</v-btn>
 
@@ -113,38 +118,68 @@
 
 						<v-col md="6">
 							<v-card
-								class="pa-2 scroll"								
-								tile>
+								class="pa-2"
+								:class="largeSize ? 'scroll' : 'normal-height'"
+								rounded>
+					
+								<v-card-title style="background: #6ED860; color: white">
+									Lista de recomendaciones
 
+									<v-spacer></v-spacer>
+
+									<v-btn v-if="suggestedSongsReady"
+										color="white"
+										small
+										fab
+										@click="clearSuggestedSongs()">
+										<v-icon title="Limpiar lista de sugerencias">mdi-delete</v-icon>										
+									</v-btn>
+								</v-card-title>
+
+								<!--
 								<v-toolbar
 									color="#6ED860"
-									dark>															
+									dark>
 
 									<v-toolbar-title>Lista de recomendaciones</v-toolbar-title>
 
-								</v-toolbar>				
+									<v-spacer></v-spacer>
 
-								<v-list subheader v-if="suggestedSongsReady">
-									
-									<v-container fluid>										
+									<v-btn v-if="suggestedSongsReady"
+										color="white"
+										small
+										fab
+										@click="clearSuggestedSongs()">
+										<v-icon title="Limpiar lista de sugerencias">mdi-delete</v-icon>										
+									</v-btn>
 
-										<v-row>
-											<v-col>
-												<v-btn @click="clearSuggestedSongs()">Limpiar lista de sugerencias</v-btn>
-											</v-col>
-										</v-row>
+								</v-toolbar>
+								-->																
 
-										<v-row>
-											<v-col>
-												<v-subheader><h3>Artistas</h3></v-subheader>
-											</v-col>
-											<v-col>
-												<v-subheader><h3>Canciones</h3></v-subheader>
-											</v-col>
-										</v-row>	
+								<v-container fluid>										
 
-										<v-divider></v-divider>																			
-									</v-container>
+									<v-row>
+										<v-col>
+											<v-subheader><h3>Artistas</h3></v-subheader>
+										</v-col>
+										<v-col>
+											<v-subheader><h3>Canciones</h3></v-subheader>
+										</v-col>
+									</v-row>	
+
+									<v-divider></v-divider>																			
+								</v-container>
+		
+								<v-container fluid v-if="progressCircular" style="margin: 250px 300px;">
+														
+									<v-progress-circular
+										:size="50"
+										indeterminate
+										color="#6ED860">									
+									</v-progress-circular>
+								</v-container>
+
+								<v-list subheader v-if="suggestedSongsReady">																		
 
 									<v-list-item
 										v-for="suggestSong in suggestedSongs"
@@ -169,8 +204,11 @@
 
 										<v-list-item-content>
 												<iframe :src="suggestSong.link"
-													width="500" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>
+													width="500" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media">
+												</iframe>
 										</v-list-item-content>
+
+										<!-- https://open.spotify.com/embed/track/6KtheYP777tm0guxcbMqdR no existe! -->
 
 									
 										<!--
@@ -212,6 +250,7 @@
 	</div>
 </template>
 
+
 <script>
 
 import axios from 'axios';
@@ -227,18 +266,25 @@ export default {
 			checkboxes: [],
 			imgUrl: null,
 			suggestedSongsReady: false,
+			largeSize: false,
+			progressCircular: false,
+			blockSubmitButton: false,
+			interval: {},
+			value: 0,
 			validation: {
 
 				fillImage: false,
-				imageValid: false,
-				checkboxValid: false,
+				imageValid: false				
 			},
 			rules: [
 
+				//Valida el contenido del archivo de la imagen, si no es verdadero 
+				//ejecuta la función "displayErrorSize()".
 				imageFile => this.validateContent(imageFile) || this.displayErrorSize()			
 			],
 			genders: [
-
+				
+				//Géneros de música aceptados por el API de Spotify.
 				'pop',
 				'indie-pop',
 				'electronic',
@@ -249,18 +295,32 @@ export default {
 				'chill',
 				'progressive-house'
 			],
-			suggestedSongs: []
+			suggestedSongs: [] //Arreglo para las canciones sugeridas por el API de Spotify.
 		}
 	},
 	methods: {
 
+		/**
+		 * Valida si la variable contiene un archivo
+		 * y si el archivo pesa menos de 10MB, para 
+		 * establecer las variables de validación en verdadero,
+		 * de lo contrario se colocan en falso.
+		 * 
+		 * 
+		 * @param1 archivo de la imagen del rostro del usuario.
+		 */
 		validateContent(imageFile) {
 
 			if (imageFile && imageFile.size < 10000000) {
 
 				this.validation.fillImage = true;
 
+				//Arreglar:
 				this.validation.imageValid = true;
+				
+				this.blockSubmitButton = false;
+
+				this.largeSize = true; //cambia el tamaño de la lista de recomendaciones.
 
 				return imageFile;
 
@@ -268,58 +328,95 @@ export default {
 
 				this.validation.fillImage = false;
 
-				this.validation.imageValid = false;				
+				//Arreglar:
+				this.validation.imageValid = false;
+
+				this.blockSubmitButton = true;
+				
+				this.largeSize = false; //regresa el tamaño de la lista de recomendaciones a su estado normal.
 
 				return !imageFile;
 			}
 		},
+		/**
+		 * Establece la variable "fillImage" en falso
+		 * para indicar que no hay una imagen válida 
+		 * disponible.
+		 * 
+		 * @return mensaje que indica el tamaño que debe
+		 * 			contener el archivo de la imagen.
+		 * 
+		 */
 		displayErrorSize() {
 
 			this.validation.fillImage = false;
 
 			return "La imagen no puede pesar más de 10MB";
 		},
-		/*validateCheckboxContent(checkbox) {
-
-			let valid;
-
-			if (checkbox) {
-
-				this.validation.checkboxValid = true;
-
-				valid = true;
-
-			} else {
-
-				this.validation.checkboxValid = false;
-
-				valid = false;
-			}
-
-			return valid;
-		},*/
+		/**
+		 * Una vez que el usuario suba una
+		 * imagen, se ejecutará esta funcion
+		 * para crear una URL y ser usada
+		 * por la etiqueta <v-img :src="URL">.
+		 * 
+		 */
 		onFileChange() {
 
 			this.imgUrl = URL.createObjectURL(this.file);
 		},
+		/**
+		 * Cuando el usuario dé clic al botón de
+		 * "Limpiar búsqueda", se ejecutará esta
+		 * función para establecer el valor de la
+		 * variable "file" en nulo, y el arreglo de
+		 * checkboxes en un arreglo vacío.
+		 * 
+		 */
 		clear() {
 
 			this.checkboxes = [];
 
 			this.file = null;
+
+			this.largeSize = false;
 		},
+		/**
+		 * Si el usuario da clic al botón
+		 * "Limpiar sugerencias", se ejecutará
+		 * está función para limpiar la variable
+		 * que contiene el arreglo de las canciones
+		 * de sugerencia.
+		 * 
+		 */
 		clearSuggestedSongs() {
 
 			this.suggestedSongs = [];
 
-			//this.suggestedSongsReady = false;
+			this.suggestedSongsReady = false;
 		},
+		/**
+		 * Inicializa un objeto con el archivo
+		 * de la imagen del usuario y los checkboxes
+		 * que seleccionó, para después ejecutar a la función que
+		 * hará las peticiones a las respectivas APIs.
+		 * 
+		 */
 		submit() {			
 
-			let data = {imgFile: this.file, genders: this.checkboxes};
+			let dataForm = {imgFile: this.file, genders: this.checkboxes};
 
-			this.doAPICalls(data);					
+			this.blockSubmitButton = true;
+
+			this.progressCircular = true;			
+			
+			setTimeout(() => this.doAPICalls(dataForm), 1000);				
 		},
+		/**
+		 * 
+		 * 
+		 * @param1 objeto con el archivo de la imagen y los checkboxes
+		 * 			del género de música que eligió el usuario.
+		 */
 		async doAPICalls(data) {
 
 			//let emotions;
@@ -393,14 +490,28 @@ export default {
 				
 				this.suggestedSongsReady = true;
 
-				//console.log(this.suggestedSongs);
-
 			} catch (error) {
 
 				console.log(error);			
-			}
-			
+			}	
+
+			this.progressCircular = false;
+
+			this.blockSubmitButton = false;
 		},
+		/**
+		 * A partir de las emociones y los géneros de música
+		 * del usuario, se determinarán las variables para
+		 * que el API de Spotify recomiende una serie de
+		 * canciones. 
+		 * 
+		 * @param1 emociones encontradas en la imagen
+		 * 			subida por el usuario.
+		 * @param2 géneros de música elegidos por el usuario.
+		 * 
+		 * @return lista de variables para obtener recomendaciones
+		 *			por parte de Spotify-
+		 */
 		getDataRecommendation(emotions, genders) {
 
 			const arrayObject = Object.entries(emotions);
@@ -423,6 +534,18 @@ export default {
 				maxTempo: 1.0
 			};
 		},
+		/**
+		 * Realiza la petición al API de Microsoft
+		 * Azure para obtener las emociones del
+		 * rostro del usuario.
+		 * 
+		 * @param1 archivo que contiene la imagen
+		 * 			subida por el usuario.
+		 * 
+		 * @return respuesta de la llamada al API
+		 * 			de reconocimiento facial de 
+		 * 			Microsoft Azure.
+		 */
 		async requestAPIAzure(imgFile) {
 
 			const SUB_KEY = '5a1b891888e1413ca3340a187c2f6f91';
@@ -439,24 +562,34 @@ export default {
 				}
 			});
 		},
+		/**
+		 * Realiza una petición al API de Spotify
+		 * con el método GET, para obtener las
+		 * recomendaciones que vienen en los parámetros.
+		 *
+		 * @param1 conjunto de variables para obtener las
+		 * 			recomendaciones de Spotify.
+		 * 
+		 * @return respuesta de la llamada al
+		 *			API de recomendación de canciones
+		 *			de Spotify.
+		 */
 		requestAPISpotify(dataRecommendationParams) {
 
-			const AUTH_STR = 'Bearer '.concat('BQBoC_Lmp3D2ckArp_ezpAVXzMB0AmYrssMaPpYbQEQ4xqv3FsXOAfoUDjDsgUUwYeLJEF5o8VZnhnso1v0');
+			const AUTH_STR = 'Bearer '.concat('BQD1TFI-cpRJPSJmJVwgc9DA7CC2QWFm6Y3QqES-M89p84TZ7r3WOb1MtR2k_Sk_6xG-KEHKqHokfALLKag');
 
 			const config = {
 
 				headers: {
 
 					'Content-Type': 'application/json',
-					'Accept': 'application/json',
+					'Accept':       'application/json',
 					'Authorization': AUTH_STR
 				},
 				params: dataRecommendationParams
 			};
 
 			return axios.get('https://api.spotify.com/v1/recommendations', config);
-				/*.then(response => console.log(response))
-				.catch(error => console.log(error));*/
 		}
 	}
 }
@@ -466,10 +599,16 @@ export default {
 
 <style scoped>
 
+.normal-height {
+
+	height: 502.5px;
+	overflow-y: auto;
+}
+
 .scroll {
 
-	overflow-y: auto;
 	height: 822px;
+	overflow-y: auto;	
 }
 
 </style>
