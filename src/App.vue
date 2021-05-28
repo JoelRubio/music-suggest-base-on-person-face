@@ -39,7 +39,7 @@
 												@change="onFileChange"
 												counter
 												show-size
-												accept="image/png, image/jpeg, image/jpg, image/bmp"
+												accept="image/jpeg, image/png, image/gif, image/bmp"
 												placeholder="Selecciona una imagen"
 												prepend-icon="mdi-camera"
 												label="Rostro">
@@ -135,26 +135,7 @@
 										<v-icon title="Limpiar lista de sugerencias">mdi-delete</v-icon>										
 									</v-btn>
 								</v-card-title>
-
-								<!--
-								<v-toolbar
-									color="#6ED860"
-									dark>
-
-									<v-toolbar-title>Lista de recomendaciones</v-toolbar-title>
-
-									<v-spacer></v-spacer>
-
-									<v-btn v-if="suggestedSongsReady"
-										color="white"
-										small
-										fab
-										@click="clearSuggestedSongs()">
-										<v-icon title="Limpiar lista de sugerencias">mdi-delete</v-icon>										
-									</v-btn>
-
-								</v-toolbar>
-								-->																
+																						
 
 								<v-container fluid>										
 
@@ -183,24 +164,11 @@
 
 									<v-list-item
 										v-for="suggestSong in suggestedSongs"
-										:key="suggestSong.id">
-											
-										<!--
-										<v-list-item-avatar>
-											<v-img
-												:alt="`${suggestedSongs.name} avatar`"
-												:src="suggestedSongs.img">
-											</v-img>									
-										</v-list-item-avatar>-->
+										:key="suggestSong.id">																					
 
 										<v-list-item-content>
 											<v-list-item-title v-text="suggestSong.name"></v-list-item-title>
-										</v-list-item-content>
-
-										<!--
-										<v-list-item-content>
-											<v-list-item-title v-text="person.song"></v-list-item-title>
-										</v-list-item-content>-->
+										</v-list-item-content>							
 
 										<v-list-item-content>
 												<iframe :src="suggestSong.link"
@@ -209,24 +177,7 @@
 										</v-list-item-content>
 
 										<!-- https://open.spotify.com/embed/track/6KtheYP777tm0guxcbMqdR no existe! -->
-
-									
-										<!--
-										<v-list-item-icon>
-											<v-btn class="mx-2" fab small color="#81C784" :href="person.link" target="_blank">
-												<v-icon>
-													mdi-music-circle
-												</v-icon>
-											</v-btn>											
-										</v-list-item-icon>-->
-
-										
-										<!--
-										<v-list-item-icon>
-											<v-icon :color="person.active ? 'deep-purple accent-4' : 'grey'">
-												mdi-message-outline
-											</v-icon>
-										</v-list-item-icon>-->
+																	
 									</v-list-item>
 								</v-list>								
 
@@ -269,12 +220,9 @@ export default {
 			largeSize: false,
 			progressCircular: false,
 			blockSubmitButton: false,
-			interval: {},
-			value: 0,
 			validation: {
 
-				fillImage: false,
-				imageValid: false				
+				fillImage: false,			
 			},
 			rules: [
 
@@ -302,7 +250,7 @@ export default {
 
 		/**
 		 * Valida si la variable contiene un archivo
-		 * y si el archivo pesa menos de 10MB, para 
+		 * y si el archivo pesa menos de 6 MB, para 
 		 * establecer las variables de validación en verdadero,
 		 * de lo contrario se colocan en falso.
 		 * 
@@ -311,12 +259,9 @@ export default {
 		 */
 		validateContent(imageFile) {
 
-			if (imageFile && imageFile.size < 10000000) {
+			if (imageFile && imageFile.size < 6000000) {
 
-				this.validation.fillImage = true;
-
-				//Arreglar:
-				this.validation.imageValid = true;
+				this.validation.fillImage = true;;
 				
 				this.blockSubmitButton = false;
 
@@ -327,9 +272,6 @@ export default {
 			} else {
 
 				this.validation.fillImage = false;
-
-				//Arreglar:
-				this.validation.imageValid = false;
 
 				this.blockSubmitButton = true;
 				
@@ -351,7 +293,7 @@ export default {
 
 			this.validation.fillImage = false;
 
-			return "La imagen no puede pesar más de 10MB";
+			return "La imagen no puede pesar más de 6MB";
 		},
 		/**
 		 * Una vez que el usuario suba una
@@ -403,11 +345,15 @@ export default {
 		 */
 		submit() {			
 
-			let dataForm = {imgFile: this.file, genders: this.checkboxes};
+			let dataForm = {
+				
+				imgFile: this.file, 
+				genders: this.checkboxes
+			};
 
 			this.blockSubmitButton = true;
 
-			this.progressCircular = true;			
+			this.progressCircular = true;
 			
 			setTimeout(() => this.doAPICalls(dataForm), 1000);				
 		},
@@ -445,7 +391,7 @@ export default {
 
 			let dataRecommendation = {
 
-				limit: 8,
+				limit: 10,
 				seed_genres: genders, 
 				min_danceability: 0.0,
 				max_danceability: 1.0,
@@ -528,10 +474,17 @@ export default {
 			
 			return {
 
-				limit: 1,
+				limit: 10,
 				seed_genres: genders, 
-				minTempo: 0.50,
-				maxTempo: 1.0
+				min_danceability: 0.0,
+				max_danceability: 1.0,
+				min_energy: 0.0,
+				max_energy: 1.0,
+				min_liveness: 0.0,
+				max_liveness: 1.0,
+				//max_popularity: 1.0,
+				minTempo: 0.0,
+				maxTempo: 0.30
 			};
 		},
 		/**
