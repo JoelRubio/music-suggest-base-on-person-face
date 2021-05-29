@@ -145,10 +145,10 @@
 
 									<v-spacer></v-spacer>
 
-									<v-tooltip bottom>
+									<v-tooltip bottom v-if="suggestedSongsReady">
 										<template v-slot:activator="{ on, attrs }">
 										
-											<v-btn v-if="suggestedSongsReady"
+											<v-btn 
 												color="white"										
 												icon
 												@click="clearSuggestedSongs()"
@@ -161,7 +161,7 @@
 
 										<span>Limpiar lista de sugerencias</span>
 									</v-tooltip>
-									
+
 								</v-toolbar>											
 
 								<v-container fluid>										
@@ -249,7 +249,12 @@
 					</v-card-text>
 
 					<v-card-text>
-
+						<a  style="text-decoration: none;"
+							class="white--text"
+							href="https://github.com/JoelRubio/music-suggest-base-on-person-face/blob/main/LICENSE" 
+							target="_blank">
+							Free & Open Source (MIT)
+						</a>
 					</v-card-text>
 			
 					<v-card-text class="white-text">
@@ -293,48 +298,42 @@ export default {
 				//Valida el contenido del archivo de la imagen, si no es verdadero 
 				//ejecuta la función "displayErrorSize()".
 				imageFile => this.validateContent(imageFile) || this.displayErrorSize()			
-			],
+			],			
 			emotions: [
 				
+				//Conjunto de emociones y su representación a través de emojis.
+
 				{
-					description: 'Felicidad',
-					emoji: String.fromCodePoint('0x1F600'),
-					percent: 0
+					description: 'happiness',
+					emoji: String.fromCodePoint('0x1F600')
 				},
 				{
-					description: 'Enojo',
-					emoji: String.fromCodePoint('0x1F620'),					
-					percent: 0
+					description: 'anger',
+					emoji: String.fromCodePoint('0x1F620')			
 				},
 				{
-					description: 'Tristeza',
-					emoji: String.fromCodePoint('0x1F641'),
-					percent: 0
+					description: 'sadness',
+					emoji: String.fromCodePoint('0x1F641')
 				},
 				{
-					description: 'Sorpresa',
-					emoji: String.fromCodePoint('0x1F62F'),
-					percent: 0
+					description: 'surprise',
+					emoji: String.fromCodePoint('0x1F62F')
 				},
 				{
-					description: 'Disgusto',
-					emoji: String.fromCodePoint('0x1F92E'),
-					percent: 0	
-				},
-				/*{
-					description: 'Desprecio',
-					emoji: String.fromCodePoint('0x1F644'),
-					percent: 0	
+					description: 'disgust',
+					emoji: String.fromCodePoint('0x1F92E')
+				}/*,
+				{
+					description: 'contempt',
+					emoji: String.fromCodePoint('0x1F644')
 				},
 				{
-					description: 'Miedo',
-					emoji: String.fromCodePoint('0x1F628'),
-					percent: 0	
+					description: 'fear',
+					emoji: String.fromCodePoint('0x1F628')
 				},
 				{
-					description: 'Neutro',
-					emoji: String.fromCodePoint('0x1F610'),
-					percent: 0	
+					description: 'neutral',
+					emoji: String.fromCodePoint('0x1F610')
 				}*/
 			],
 			genders: [
@@ -582,6 +581,8 @@ export default {
 
 			console.log(emotionsAvailable);
 
+			
+
 
 			//algorithm to determine the tempo base on emotions.
 			
@@ -644,7 +645,7 @@ export default {
 		requestAPISpotify(dataRecommendationParams) {
 
 			//Token de autenticación con Spotify. Se reinicia cada 1 hora.
-			const AUTH_STR = 'Bearer '.concat('BQDJIP7Sess7PFkCub-SacWG_m8muSCi36dK3QWiK07kgI0I92AV4pLfOUiNJQ57mvwCfxqlw5lL4dK2xsM');
+			const AUTH_STR = 'Bearer '.concat('BQA40tgRqrf2ieSeXT2t_Mc1bWCNIRiqQy7uDhb5XKmHOwhEIElWOuOFN903OappXX8SH2BJMK-TS1m2LZo');
 
 			const config = {
 
