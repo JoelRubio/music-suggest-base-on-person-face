@@ -22,7 +22,7 @@
 								class="pa-2">							
 								
 								<v-toolbar
-									color="purple"
+									color="#5EA6FF"																		
 									dark>															
 
 									<v-toolbar-title>Selecciona una imagen</v-toolbar-title>
@@ -45,19 +45,36 @@
 												label="Rostro">
 											</v-file-input>
 
-											<v-img :src="imgUrl" v-if="validation.fillImage"
-												class="rounded-lg" 
-												width="350" 
-												height="320">												
-											</v-img>
+											<v-row>
+												<v-col>
+													<v-img :src="imgUrl" v-if="validation.fillImage"
+														class="rounded-lg" 
+														width="350" 
+														height="320">												
+													</v-img>
+												</v-col>
+												
+												<v-col>																					
+													<v-list v-if="validation.fillImage" class="scroll-emotions">
+														<v-list-item  v-for="emotion in emotions" :key="emotion.description">
+															
+															<!--
+															<v-list-item-content>
+																<v-list-item-title v-text="emotion.description" style="font-size: 12px;"></v-list-item-title>																
+															</v-list-item-content>
+															-->
 
-											<!--
-											<v-card-text v-if="validation.fillImage">
+															<v-list-item-action>
+																<v-list-item-action-text v-text="emotion.emoji" style="font-size: 24px;"></v-list-item-action-text>
+															</v-list-item-action>
 
-												<h3>Test</h3>
-
-											</v-card-text>
-											-->
+															<v-list-item-content>
+																<v-list-item-title v-text="'% ' + emotion.percent"></v-list-item-title>
+															</v-list-item-content>
+														</v-list-item>
+													</v-list>								
+												</v-col>
+											</v-row>
 
 										</v-container>
 										
@@ -66,23 +83,21 @@
 									<v-card flat>
 										<v-card-text>
 
-											<h3>Género de música</h3>
+											<h3>Género de música</h3>										
 
-											<v-divider></v-divider>
-
-											<v-container fluid>
-												
-												<v-layout row wrap>
-													<v-flex v-for="gender in genders" :key="gender" xs4>
-														<v-checkbox light 
-															:label=gender 
-															:value=gender 
-															v-model="checkboxes">															
-														</v-checkbox>
-													</v-flex>
-												</v-layout>						
-											
-											</v-container>
+											<v-alert outlined color="#5EA6FF">
+												<v-container fluid class="scroll-card">													
+													<v-layout row wrap>
+														<v-flex v-for="gender in genders" :key="gender" xs4>
+															<v-checkbox light 
+																:label=gender 
+																:value=gender 
+																v-model="checkboxes">															
+															</v-checkbox>
+														</v-flex>
+													</v-layout>																								
+												</v-container>
+											</v-alert>
 										</v-card-text>
 									</v-card>
 								
@@ -93,7 +108,7 @@
 											<v-btn												
 												rounded
 												elevation="4"
-												color="#3E68D6"
+												color="#5EA6FF"
 												class="ma-2 white--text"												
 												:disabled="blockSubmitButton"
 												@click="submit()">
@@ -119,23 +134,24 @@
 						<v-col md="6">
 							<v-card
 								class="pa-2"
-								:class="largeSize ? 'scroll' : 'normal-height'"
+								
 								rounded>
 					
-								<v-card-title style="background: #6ED860; color: white">
-									Lista de recomendaciones
+								<v-toolbar color="#7CE495" dark>
+									<v-toolbar-title>									
+										Lista de recomendaciones																												
+									</v-toolbar-title>
 
 									<v-spacer></v-spacer>
 
 									<v-btn v-if="suggestedSongsReady"
-										color="white"
+										color="#323F4B"										
 										small
 										fab
 										@click="clearSuggestedSongs()">
-										<v-icon title="Limpiar lista de sugerencias">mdi-delete</v-icon>										
+										<v-icon title="Limpiar lista de sugerencias">mdi-delete</v-icon>											
 									</v-btn>
-								</v-card-title>
-																						
+								</v-toolbar>											
 
 								<v-container fluid>										
 
@@ -156,11 +172,11 @@
 									<v-progress-circular
 										:size="50"
 										indeterminate
-										color="#6ED860">									
+										color="#7CE495">									
 									</v-progress-circular>
 								</v-container>
 
-								<v-list subheader v-if="suggestedSongsReady">																		
+								<v-list subheader v-if="suggestedSongsReady" :class="largeSize ? 'scroll' : 'normal-height'">																		
 
 									<v-list-item
 										v-for="suggestSong in suggestedSongs"
@@ -184,10 +200,16 @@
 							</v-card>
 						</v-col>
 					</v-row>
-				</v-container>
+
+					<br>
+					<br>
+
+				</v-container>				
 			</v-main>
 
-			<v-footer padless>
+		
+
+			<v-footer padless>				
 				<v-col
 					class="text-center"
 					cols="12">
@@ -230,18 +252,67 @@ export default {
 				//ejecuta la función "displayErrorSize()".
 				imageFile => this.validateContent(imageFile) || this.displayErrorSize()			
 			],
+			emotions: [
+				
+				{
+					description: 'Felicidad',
+					emoji: String.fromCodePoint('0x1F600'),
+					percent: 0
+				},
+				{
+					description: 'Enojo',
+					emoji: String.fromCodePoint('0x1F620'),					
+					percent: 0
+				},
+				{
+					description: 'Tristeza',
+					emoji: String.fromCodePoint('0x1F641'),
+					percent: 0
+				},
+				{
+					description: 'Sorpresa',
+					emoji: String.fromCodePoint('0x1F62F'),
+					percent: 0
+				},
+				{
+					description: 'Disgusto',
+					emoji: String.fromCodePoint('0x1F92E'),
+					percent: 0	
+				},
+				/*{
+					description: 'Desprecio',
+					emoji: String.fromCodePoint('0x1F644'),
+					percent: 0	
+				},
+				{
+					description: 'Miedo',
+					emoji: String.fromCodePoint('0x1F628'),
+					percent: 0	
+				},
+				{
+					description: 'Neutro',
+					emoji: String.fromCodePoint('0x1F610'),
+					percent: 0	
+				}*/
+			],
 			genders: [
 				
 				//Géneros de música aceptados por el API de Spotify.
 				'pop',
 				'indie-pop',
-				'electronic',
 				'rock',
-				'jazz',
+				'electronic',
+				'progressive-house',
+				'deep-house',							
 				'french',
+				'spanish',
+				'british',
+				'metal',
+				'jazz',
 				'dance',
-				'chill',
-				'progressive-house'
+				'chill',				
+				'salsa',
+				'country'
 			],
 			suggestedSongs: [] //Arreglo para las canciones sugeridas por el API de Spotify.
 		}
@@ -261,7 +332,7 @@ export default {
 
 			if (imageFile && imageFile.size < 6000000) {
 
-				this.validation.fillImage = true;;
+				this.validation.fillImage = true;
 				
 				this.blockSubmitButton = false;
 
@@ -501,6 +572,7 @@ export default {
 		 */
 		async requestAPIAzure(imgFile) {
 
+			//Clave de suscripción con Microsoft Azure.
 			const SUB_KEY = '5a1b891888e1413ca3340a187c2f6f91';
 
 			return axios({
@@ -529,7 +601,8 @@ export default {
 		 */
 		requestAPISpotify(dataRecommendationParams) {
 
-			const AUTH_STR = 'Bearer '.concat('BQD1TFI-cpRJPSJmJVwgc9DA7CC2QWFm6Y3QqES-M89p84TZ7r3WOb1MtR2k_Sk_6xG-KEHKqHokfALLKag');
+			//Token de autenticación con Spotify. Se reinicia cada 1 hora.
+			const AUTH_STR = 'Bearer '.concat('BQDJIP7Sess7PFkCub-SacWG_m8muSCi36dK3QWiK07kgI0I92AV4pLfOUiNJQ57mvwCfxqlw5lL4dK2xsM');
 
 			const config = {
 
@@ -552,15 +625,27 @@ export default {
 
 <style scoped>
 
+.scroll-emotions {
+
+	height: 320px;
+	overflow-y: auto;
+}
+
+.scroll-card {
+
+	height: 200px;
+	overflow-y: auto;	
+}
+
 .normal-height {
 
-	height: 502.5px;
+	height: 553.5px;
 	overflow-y: auto;
 }
 
 .scroll {
 
-	height: 822px;
+	height: 873.5px;
 	overflow-y: auto;	
 }
 
