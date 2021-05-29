@@ -66,7 +66,7 @@
 															-->
 
 															<v-list-item-action>
-																<v-list-item-action-text v-text="emotion.emoji" style="font-size: 24px;"></v-list-item-action-text>
+																<v-list-item-action-text v-text="emotion.emoji" class="emoji-font-size"></v-list-item-action-text>
 															</v-list-item-action>
 
 															<v-list-item-content>
@@ -135,7 +135,6 @@
 						<v-col md="6">
 							<v-card
 								class="pa-2"
-								
 								rounded>
 					
 								<v-toolbar color="#7CE495" dark>
@@ -187,7 +186,7 @@
 									</v-progress-circular>
 								</v-container>
 
-								<v-list subheader v-if="suggestedSongsReady" :class="largeSize ? 'scroll' : 'normal-height'">																		
+								<v-list subheader v-if="suggestedSongsReady" :class="largeSize ? 'scroll-height' : 'normal-height'">																		
 
 									<v-list-item
 										v-for="suggestSong in suggestedSongs"
@@ -304,35 +303,27 @@ export default {
 				//Conjunto de emociones y su representación a través de emojis.
 
 				{
-					//happiness: 'happiness',
-					happiness: String.fromCodePoint('0x1F600')
+					happiness: String.fromCodePoint('0x1F600')					
 				},
 				{
-					//title: 'anger',
 					anger: String.fromCodePoint('0x1F620')			
 				},
 				{
-					//title: 'sadness',
 					sadness: String.fromCodePoint('0x1F641')
 				},
 				{
-					//title: 'surprise',
 					surprise: String.fromCodePoint('0x1F62F')
 				},
 				{
-					//title: 'disgust',
 					disgust: String.fromCodePoint('0x1F92E')
 				},
 				{
-					//title: 'contempt',
 					contempt: String.fromCodePoint('0x1F644')
 				},
 				{
-					//title: 'fear',
 					fear: String.fromCodePoint('0x1F628')
 				},
 				{
-					//title: 'neutral',
 					neutral: String.fromCodePoint('0x1F610')
 				}
 			],
@@ -406,7 +397,7 @@ export default {
 
 			this.validation.fillImage = false;
 
-			return "La imagen no puede pesar más de 6MB";
+			return "La imagen no puede pesar más de 6 MB";
 		},
 		/**
 		 * Una vez que el usuario suba una
@@ -472,7 +463,7 @@ export default {
 
 			this.progressCircular = true;
 			
-			setTimeout(() => this.doAPICalls(dataForm), 1000);		
+			setTimeout(() => this.doAPICalls(dataForm), 50);		
 								
 
 			//console.log(this.emotionsDetected);
@@ -491,15 +482,22 @@ export default {
 
 				let responseAzure = await this.requestAPIAzure(data.imgFile);
 
+				if (responseAzure.data.length === 0) {
+
+					throw 'The response of Microsoft Azure is empty';
+				}
+
 				console.log(responseAzure);
 
-				emotions = responseAzure.data[0].faceAttributes.emotion;
-
-				console.log(emotions);			
+				emotions = responseAzure.data[0].faceAttributes.emotion;					
 
 			} catch (error) {
 
 				console.log(error);
+
+				this.progressCircular = false;
+
+				return;
 			}
 
 			
@@ -517,9 +515,7 @@ export default {
 				//let songName   = responseSpotify.data.tracks[0].name;
 				//let preUrl = responseSpotify.data.tracks[0].external_urls.spotify;
 				
-				//https://open.spotify.com/track/...
-
-				//console.log(responseSpotify.data.tracks);
+				//https://open.spotify.com/track/...				
 
 				let tracks = responseSpotify.data.tracks;
 
@@ -567,28 +563,9 @@ export default {
 			const arrayEmotions = arrayObject.filter(([key, value]) => value > 0);			
 
 			const emotionsAvailable = Object.fromEntries(arrayEmotions);
-
-			//console.log(emotionsAvailable);
-
-
-			this.emotions.forEach(emotion => {
-
-				
-				for (let [emotionKey, emotionValue] of Object.entries(emotion)) {							
-
-					for (let [emotionAvailableKey, emotionAvailableValue] of Object.entries(emotionsAvailable)) {									
-
-						if (emotionKey.toString() === emotionAvailableKey.toString()) {
-																										
-							this.emotionsDetected.push({
-																
-								emoji: emotionValue,
-								percent: (emotionAvailableValue * 100).toFixed(2)
-							});							
-						}
-					}				
-				}
-			});
+									
+			
+			this.setEmotionsObject(emotionsAvailable);			
 
 		
 			//algorithm to determine the tempo base on emotions.
@@ -610,6 +587,39 @@ export default {
 			};
 		},
 		/**
+		 * 
+		 * 
+		 * @param1 emociones detectadas en el rostro de la persona.
+		 * 
+		 * @return promesa sobre la ejecución de haber creado el arreglo
+		 * 			de objetos conteniendo el emoji y el porcentaje de cada
+		 * 			emoción.
+		 */
+		setEmotionsObject(emotionsAvailable) {
+			
+
+			return new Promise((resolve) => {
+
+				resolve(this.emotions.forEach(emotion => {
+				
+					for (let [emotionKey, emotionValue] of Object.entries(emotion)) {							
+
+						for (let [emotionAvailableKey, emotionAvailableValue] of Object.entries(emotionsAvailable)) {									
+
+							if (emotionKey.toString() === emotionAvailableKey.toString()) {
+																											
+								this.emotionsDetected.push({
+																	
+									emoji: emotionValue,
+									percent: (emotionAvailableValue * 100).toFixed(2)
+								});							
+							}
+						}				
+					}
+				}));
+			});
+		},
+		/**
 		 * Realiza la petición al API de Microsoft
 		 * Azure para obtener las emociones del
 		 * rostro del usuario.
@@ -629,7 +639,7 @@ export default {
 			return axios({
 
 				method: 'post',
-				url: 'https://development-faceapi.cognitiveservices.azure.com/face/v1.0/detect?overload=stream&returnFaceId=true&returnFaceAttributes=emotion&recognitionModel=recognition_01&detectionModel=detection_01',
+				url: 'https://development-faceapi.cognitiveservices.azure.com/face/v1.0/detect?overload=stream&returnFaceId=true&returnFaceAttributes=emotion&detectionModel=detection_01',
 				data: imgFile,
 				headers: {
 
@@ -653,7 +663,7 @@ export default {
 		requestAPISpotify(dataRecommendationParams) {
 
 			//Token de autenticación con Spotify. Se reinicia cada 1 hora.
-			const AUTH_STR = 'Bearer '.concat('BQDnmchYI8kIbmS8OoFKEP5l79QygeWTj378fE6Ctr46UYHAoT2ExP7JewNQDeoJYWw1HtAGeptb4jSXlyY');
+			const AUTH_STR = 'Bearer '.concat('BQC7Te5H2s2b65HyhFy9SKDrRoxO-2b7msIEgecdvUiI_Nrom_zJsY7hmuV8RKHvP5mF5XE4u7Lk0zBh_Vg');
 
 			const config = {
 
@@ -687,6 +697,11 @@ export default {
 	overflow-y: auto;
 }
 
+.emoji-font-size {
+
+	font-size: 24px;
+}
+
 .scroll-card {
 
 	height: 200px;
@@ -695,19 +710,19 @@ export default {
 
 .normal-height {
 
-	height: 553.5px;
+	height: 400.5px;
 	overflow-y: auto;
 }
 
-.scroll {
+.scroll-height {
 
-	height: 873.5px;
+	height: 720.5px;
 	overflow-y: auto;	
 }
 
 .progress-circular {
 
-	margin: 250px 300px;
+	margin: 163.5px 280px;
 }
 
 </style>
