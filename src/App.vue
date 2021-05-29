@@ -3,17 +3,18 @@
 
 		<v-app>
 			
-			<v-toolbar
-				color="#78909C"
-				dark>															
-
-				<v-toolbar-title>Recomendaciones de música a partir del rostro de una persona</v-toolbar-title>
-
+			<v-toolbar>
+				<v-toolbar-title class="flex text-center font-weight-black font-title">
+					Recomendaciones de música a partir del rostro de una persona
+				</v-toolbar-title>
 			</v-toolbar>
 
-			<v-main>
-				
+			<v-main>								
+
 				<v-container fluid class="grey lighten-5">
+
+					<br>				
+
 					<v-row>
 						
 						<v-col md="6">
@@ -25,7 +26,7 @@
 									color="#5EA6FF"																		
 									dark>															
 
-									<v-toolbar-title>Selecciona una imagen</v-toolbar-title>
+									<v-toolbar-title class="font-title font-weight-black">Selecciona una imagen</v-toolbar-title>
 
 								</v-toolbar>
 
@@ -138,19 +139,29 @@
 								rounded>
 					
 								<v-toolbar color="#7CE495" dark>
-									<v-toolbar-title>									
+									<v-toolbar-title class="font-title font-weight-black">									
 										Lista de recomendaciones																												
 									</v-toolbar-title>
 
 									<v-spacer></v-spacer>
 
-									<v-btn v-if="suggestedSongsReady"
-										color="#323F4B"										
-										small
-										fab
-										@click="clearSuggestedSongs()">
-										<v-icon title="Limpiar lista de sugerencias">mdi-delete</v-icon>											
-									</v-btn>
+									<v-tooltip bottom>
+										<template v-slot:activator="{ on, attrs }">
+										
+											<v-btn v-if="suggestedSongsReady"
+												color="white"										
+												icon
+												@click="clearSuggestedSongs()"
+												v-bind="attrs"
+												v-on="on">
+
+												<v-icon>mdi-delete</v-icon>											
+											</v-btn>
+										</template>
+
+										<span>Limpiar lista de sugerencias</span>
+									</v-tooltip>
+									
 								</v-toolbar>											
 
 								<v-container fluid>										
@@ -167,7 +178,7 @@
 									<v-divider></v-divider>																			
 								</v-container>
 		
-								<v-container fluid v-if="progressCircular" style="margin: 250px 300px;">
+								<v-container fluid v-if="progressCircular" class="progress-circular">
 														
 									<v-progress-circular
 										:size="50"
@@ -209,12 +220,43 @@
 
 		
 
-			<v-footer padless>				
-				<v-col
-					class="text-center"
-					cols="12">
-					{{ new Date().getFullYear() }} — <strong>Proyecto de inteligencia artificial</strong>
-				</v-col>
+			<v-footer padless dark class="indigo lighten-1">
+				<v-card 
+					class="indigo lighten-1 white--text flex text-center"
+					flat
+					tile>
+					
+					<v-card-text>						
+						<v-tooltip bottom>
+
+							<template v-slot:activator="{ on, attrs }">
+							
+								<v-btn							
+									class="mx-4 white-text"
+									icon
+									href="https://github.com/JoelRubio/music-suggest-base-on-person-face/tree/master"
+									target="_blank"
+									v-bind="attrs"
+									v-on="on">
+
+									<v-icon>fab fa-github</v-icon>
+								</v-btn>								
+							</template>
+
+							<span>Código en Github</span>
+
+						</v-tooltip>						
+					</v-card-text>
+
+					<v-card-text>
+
+					</v-card-text>
+			
+					<v-card-text class="white-text">
+						<strong>{{ new Date().getFullYear() }}</strong> — <strong>Sistemas de Inteligencia Artificial para la Toma de Decisiones</strong>
+					</v-card-text>
+
+				</v-card>				
 			</v-footer>
 			
 
@@ -625,6 +667,11 @@ export default {
 
 <style scoped>
 
+.font-title {
+
+	font-family: 'Poppins'
+}
+
 .scroll-emotions {
 
 	height: 320px;
@@ -647,6 +694,11 @@ export default {
 
 	height: 873.5px;
 	overflow-y: auto;	
+}
+
+.progress-circular {
+
+	margin: 250px 300px;
 }
 
 </style>
