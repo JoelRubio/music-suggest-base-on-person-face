@@ -57,7 +57,7 @@
 												
 												<v-col>																					
 													<v-list v-if="validation.fillImage" class="scroll-emotions">
-														<v-list-item  v-for="emotion in emotions" :key="emotion.description">
+														<v-list-item  v-for="emotion in emotionsDetected" :key="emotion.percent">
 															
 															<!--
 															<v-list-item-content>
@@ -304,38 +304,39 @@ export default {
 				//Conjunto de emociones y su representación a través de emojis.
 
 				{
-					description: 'happiness',
-					emoji: String.fromCodePoint('0x1F600')
+					//happiness: 'happiness',
+					happiness: String.fromCodePoint('0x1F600')
 				},
 				{
-					description: 'anger',
-					emoji: String.fromCodePoint('0x1F620')			
+					//title: 'anger',
+					anger: String.fromCodePoint('0x1F620')			
 				},
 				{
-					description: 'sadness',
-					emoji: String.fromCodePoint('0x1F641')
+					//title: 'sadness',
+					sadness: String.fromCodePoint('0x1F641')
 				},
 				{
-					description: 'surprise',
-					emoji: String.fromCodePoint('0x1F62F')
+					//title: 'surprise',
+					surprise: String.fromCodePoint('0x1F62F')
 				},
 				{
-					description: 'disgust',
-					emoji: String.fromCodePoint('0x1F92E')
-				}/*,
-				{
-					description: 'contempt',
-					emoji: String.fromCodePoint('0x1F644')
+					//title: 'disgust',
+					disgust: String.fromCodePoint('0x1F92E')
 				},
 				{
-					description: 'fear',
-					emoji: String.fromCodePoint('0x1F628')
+					//title: 'contempt',
+					contempt: String.fromCodePoint('0x1F644')
 				},
 				{
-					description: 'neutral',
-					emoji: String.fromCodePoint('0x1F610')
-				}*/
+					//title: 'fear',
+					fear: String.fromCodePoint('0x1F628')
+				},
+				{
+					//title: 'neutral',
+					neutral: String.fromCodePoint('0x1F610')
+				}
 			],
+			emotionsDetected: [], //Conjunto de emociones detectadas en el rostro de una persona.
 			genders: [
 				
 				//Géneros de música aceptados por el API de Spotify.
@@ -417,6 +418,8 @@ export default {
 		onFileChange() {
 
 			this.imgUrl = URL.createObjectURL(this.file);
+
+			this.emotionsDetected = [];
 		},
 		/**
 		 * Cuando el usuario dé clic al botón de
@@ -431,6 +434,8 @@ export default {
 			this.checkboxes = [];
 
 			this.file = null;
+
+			this.emotionsDetected = [];
 
 			this.largeSize = false;
 		},
@@ -467,7 +472,10 @@ export default {
 
 			this.progressCircular = true;
 			
-			setTimeout(() => this.doAPICalls(dataForm), 1000);				
+			setTimeout(() => this.doAPICalls(dataForm), 1000);		
+								
+
+			//console.log(this.emotionsDetected);
 		},
 		/**
 		 * 
@@ -477,9 +485,9 @@ export default {
 		 */
 		async doAPICalls(data) {
 
-			//let emotions;
+			let emotions;
 
-			/*try {
+			try {
 
 				let responseAzure = await this.requestAPIAzure(data.imgFile);
 
@@ -492,29 +500,10 @@ export default {
 			} catch (error) {
 
 				console.log(error);
-			}*/
+			}
 
 			
-			//let dataRecommendation = this.getDataRecommendation(emotions, data.genders);
-
-			//console.log(dataRecommendation);
-
-			const genders = data.genders.toString();
-
-			let dataRecommendation = {
-
-				limit: 10,
-				seed_genres: genders, 
-				min_danceability: 0.0,
-				max_danceability: 1.0,
-				min_energy: 0.0,
-				max_energy: 1.0,
-				min_liveness: 0.0,
-				max_liveness: 1.0,
-				//max_popularity: 1.0,
-				minTempo: 0.50,
-				maxTempo: 1.0
-			};
+			let dataRecommendation = this.getDataRecommendation(emotions, data.genders);
 
 			
 			try {
@@ -579,23 +568,42 @@ export default {
 
 			const emotionsAvailable = Object.fromEntries(arrayEmotions);
 
-			console.log(emotionsAvailable);
-
-			
+			//console.log(emotionsAvailable);
 
 
+			this.emotions.forEach(emotion => {
+
+				
+				for (let [emotionKey, emotionValue] of Object.entries(emotion)) {							
+
+					for (let [emotionAvailableKey, emotionAvailableValue] of Object.entries(emotionsAvailable)) {									
+
+						if (emotionKey.toString() === emotionAvailableKey.toString()) {
+																										
+							this.emotionsDetected.push({
+																
+								emoji: emotionValue,
+								percent: (emotionAvailableValue * 100).toFixed(2)
+							});							
+						}
+					}				
+				}
+			});
+
+		
 			//algorithm to determine the tempo base on emotions.
+		
 			
 			return {
 
 				limit: 10,
-				seed_genres: genders, 
+				seed_genres: genders.toString(), 
 				min_danceability: 0.0,
 				max_danceability: 1.0,
-				min_energy: 0.0,
+				/*min_energy: 0.0,
 				max_energy: 1.0,
 				min_liveness: 0.0,
-				max_liveness: 1.0,
+				max_liveness: 1.0,*/
 				//max_popularity: 1.0,
 				minTempo: 0.0,
 				maxTempo: 0.30
@@ -645,7 +653,7 @@ export default {
 		requestAPISpotify(dataRecommendationParams) {
 
 			//Token de autenticación con Spotify. Se reinicia cada 1 hora.
-			const AUTH_STR = 'Bearer '.concat('BQA40tgRqrf2ieSeXT2t_Mc1bWCNIRiqQy7uDhb5XKmHOwhEIElWOuOFN903OappXX8SH2BJMK-TS1m2LZo');
+			const AUTH_STR = 'Bearer '.concat('BQDnmchYI8kIbmS8OoFKEP5l79QygeWTj378fE6Ctr46UYHAoT2ExP7JewNQDeoJYWw1HtAGeptb4jSXlyY');
 
 			const config = {
 
