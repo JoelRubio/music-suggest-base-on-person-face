@@ -26,7 +26,9 @@
 									color="#5EA6FF"																		
 									dark>															
 
-									<v-toolbar-title class="font-title font-weight-black">Selecciona una imagen</v-toolbar-title>
+									<v-toolbar-title class="font-title font-weight-black">
+										Selecciona una imagen y el género de música
+									</v-toolbar-title>
 
 								</v-toolbar>
 
@@ -41,9 +43,9 @@
 												counter
 												show-size
 												accept="image/jpeg, image/png, image/gif, image/bmp"
-												placeholder="Selecciona una imagen"
+												placeholder="Seleccionar imagen"
 												prepend-icon="mdi-camera"
-												label="Rostro">
+												label="Rostro de una persona">
 											</v-file-input>
 
 											<v-row>
@@ -57,14 +59,7 @@
 												
 												<v-col>																					
 													<v-list v-if="validation.fillImage" class="scroll-emotions">
-														<v-list-item  v-for="emotion in emotionsDetected" :key="emotion.percent">
-															
-															<!--
-															<v-list-item-content>
-																<v-list-item-title v-text="emotion.description" style="font-size: 12px;"></v-list-item-title>																
-															</v-list-item-content>
-															-->
-
+														<v-list-item  v-for="emotion in emotionsDetected" :key="emotion.percent">																												
 															<v-list-item-action>
 																<v-list-item-action-text v-text="emotion.emoji" class="emoji-font-size"></v-list-item-action-text>
 															</v-list-item-action>
@@ -201,8 +196,6 @@
 													width="500" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media">
 												</iframe>
 										</v-list-item-content>
-
-										<!-- https://open.spotify.com/embed/track/6KtheYP777tm0guxcbMqdR no existe! -->
 																	
 									</v-list-item>
 								</v-list>								
@@ -555,12 +548,12 @@ export default {
 		 * @return lista de variables para obtener recomendaciones
 		 *			por parte de Spotify-
 		 */
-		getDataRecommendation(emotions, genders) {
+		getDataRecommendation(emotions, gendersSelected) {
 
 			const arrayObject = Object.entries(emotions);
 
 			// eslint-disable-next-line no-unused-vars
-			const arrayEmotions = arrayObject.filter(([key, value]) => value > 0);			
+			const arrayEmotions = arrayObject.filter(([key, value]) => value > 0.0);			
 
 			const emotionsAvailable = Object.fromEntries(arrayEmotions);
 									
@@ -568,23 +561,174 @@ export default {
 			this.setEmotionsObject(emotionsAvailable);			
 
 		
-			//algorithm to determine the tempo base on emotions.
-		
+			//Determinar la valencia de la canción (si es más o menos positiva).
+			let valance = calculateValance(emotionsAvailable);
+
+			//Determinar el tempo de la canción.
+			let tempo = calculateTempo(emotionsAvailable);
 			
 			return {
 
-				limit: 10,
-				seed_genres: genders.toString(), 
-				min_danceability: 0.0,
-				max_danceability: 1.0,
-				/*min_energy: 0.0,
-				max_energy: 1.0,
-				min_liveness: 0.0,
-				max_liveness: 1.0,*/
-				//max_popularity: 1.0,
-				minTempo: 0.0,
-				maxTempo: 0.30
+				limit: 10, //(0-100)
+				seed_genres: gendersSelected.length > 0 ? gendersSelected.toString() : this.genders.toString(), 
+
+				/*min_danceability: 0.0, //(0.0-1.0)
+				max_danceability: 1.0, //(0.0-1.0)*/
+				min_energy: 0.0, //(0.0-1.0)
+				max_energy: 1.0, //(0.0-1.0)
+				//loudness: 0.0, //(0.0-1.0)
+				valance: valance, //(0.0-1.0)
+				minTempo: tempo.min, //(40-200)
+				maxTempo: tempo.max //(40-200)
 			};
+		},
+		calculateValance(emotionsAvailable) {
+
+			//Valencia de emoción neutral.			
+			if (Object.keys(emotionsAvailable).length === 1 && 
+				Object.keys(emotionsAvailable)[0].toString() === 'neutral' ||
+				Object.keys(emotionsAvailable)[0].toString() === 'surprise') {
+
+				return 0.5;
+			}
+
+			//Valencia de emoción felicidad.	
+			if (Object.keys(emotionsAvailable).length === 1 && 
+				Object.keys(emotionsAvailable)[0].toString() === 'happiness') {
+
+				return Object.values(emotionsAvailable)[0];
+			}
+
+			//Valencia de emoción tristeza, enojo, desprecio, disgusto, y miedo.	
+			if (Object.keys(emotionsAvailable).length === 1 && 
+				(Object.keys(emotionsAvailable)[0].toString() === 'sadness'  ||
+				 Object.keys(emotionsAvailable)[0].toString() === 'angry'    || 
+				 Object.keys(emotionsAvailable)[0].toString() === 'contempt' ||
+				 Object.keys(emotionsAvailable)[0].toString() === 'disgust'  ||
+				 Object.keys(emotionsAvailable)[0].toString() === 'fear')) {
+
+				let emotion = Object.values(emotionsAvailable)[0];
+
+				return (emotion < 0.5) ? emotion : 1.0 - emotion;
+			}
+
+			return getValenceOfCombinationEmotion(emotionsAvailable);			
+		},
+		getValenceOfCombinationEmotion(emotionsAvailable) {
+
+			//Regresa un arreglo de las llaves del objecto "emotionsAvailable".
+			let arrayEmotionsKeys   = Objects.keys(emotionsAvailable);
+
+			//Regresa un arreglo de los valores del objeto "emotionsAvailable".
+			let arrayEmotionsValues = Objects.values(emotionsAvailable); 
+
+
+			if (arrayEmotionsKeys.length === 3 && 
+				arrayEmotionsValues[0] > arrayEmotionsValues[1] ||
+				arrayEmotionsValues[0] > arrayEmotionsValues[2]) {
+				
+
+				if (arrayEmotionsValues[1] > 0.0 &&
+					arrayEmotionsValues[2] > 0.0) {
+
+					let combinationEmotion = arrayEmotionsValues[1] + arrayEmotionsValues[2];
+
+					if (combinationEmotion > arrayEmotionsValues[0]){
+
+						return arrayEmotionsValues[0] - (combinationEmotion / 2.0);
+					} 
+					else {
+
+						return arrayEmotionsValues[0] - combinationEmotion;
+					}					
+
+				} else if (arrayEmotionsValues[1] > 0.0) {
+
+					let combinationEmotion = arrayEmotionsValues[0] - arrayEmotionsValues[1];
+
+					return combinationEmotion > 0.0 ? combinationEmotion : 0.0;
+
+				} else if (arrayEmotionsValues[2] > 0.0) {
+
+					let combinationEmotion = arrayEmotionsValues[0] - arrayEmotionsValues[2];
+
+					return combinationEmotion > 0.0 ? combinationEmotion : 0.0;
+				}
+			}
+			
+			return 0.5;
+
+			/*
+			//Valencia de enojo.
+			if (emotionsAvailable.angry > emotionsAvailable.happiness ||
+				emotionsAvailable.angry > emotionsAvailable.sadness) {
+
+				if (emotionsAvailable.hapiness > 0.0 &&
+					emotionsAvailable.sadness > 0.0) {
+
+					return emotionsAvailable.angry + emotionsAvailable.sadness - emotionsAvailable.happiness;
+
+				} else if (emotionsAvailable.sadness > 0.0) {
+
+					let combinationEmotion = emotionsAvailable.angry + emotionsAvailable.sadness; 
+
+					return combinationEmotion < 99.99 ? combinationEmotion : 99.99;
+
+				} else if (emotionsAvailable.happiness > 0.0) {
+
+					let combinationEmotion = emotionsAvailable.angry - emotionsAvailable.happiness; 
+
+					return combinationEmotion > 0.0 ? combinationEmotion : 0.0;
+				}
+			}
+
+			//Valencia tristeza
+			if (emotionsAvailable.sandess > emotionsAvailable.happiness ||
+				emotionsAvailable.sadness > emotionsAvailable.angry) {
+
+				if (emotionsAvailable.hapiness > 0.0 &&
+					emotionsAvailable.angry > 0.0) {
+
+					return emotionsAvailable.sadness + emotionsAvailable.angry - emotionsAvailable.happiness;
+
+				} else if (emotionsAvailable.angry > 0.0) {
+
+					let combinationEmotion = emotionsAvailable.sadness + emotionsAvailable.angry; 
+
+					return combinationEmotion < 99.99 ? combinationEmotion : 99.99;
+
+				} else if (emotionsAvailable.happiness > 0.0) {
+
+					let combinationEmotion = emotionsAvailable.sadness - emotionsAvailable.happiness; 
+
+					return combinationEmotion > 0.0 ? combinationEmotion : 0.0;
+				}
+			}*/
+		
+		},
+		calculateTempo(emotionsAvailable) {
+
+			/*
+				Largo (very slow) is 40–60 BPM.		   (maybe sadness)
+				Larghetto (less slow) is 60–66 BPM.	   (maybe sadness)
+				Adagio (moderately slow) is 66–76 BPM. 
+				Andante (walking speed) is 76–108 BPM.  (maybe happy)
+				Moderato (moderate) is 108–120 BPM.	   (neutral)
+				Allegro (fast) is 120–168 BPM.		   (maybe happy depending the percent)
+				Presto (faster) is 168–200 BPM.		   (maybe happy, angry and disgust depending the percent)
+				Prestissimo (even faster) is 200+ BPM. (maybe angry and disgust depending the percent)
+			*/
+
+			let tempo = {
+
+				min: 0.0,
+				max: 1.0
+			};
+			
+			if (emotionsAvailable.neutral > 0.0) {
+
+				return tempo;
+			}
 		},
 		/**
 		 * 
@@ -663,7 +807,7 @@ export default {
 		requestAPISpotify(dataRecommendationParams) {
 
 			//Token de autenticación con Spotify. Se reinicia cada 1 hora.
-			const AUTH_STR = 'Bearer '.concat('BQC7Te5H2s2b65HyhFy9SKDrRoxO-2b7msIEgecdvUiI_Nrom_zJsY7hmuV8RKHvP5mF5XE4u7Lk0zBh_Vg');
+			const AUTH_STR = 'Bearer '.concat('BQDe9dd6nRG0aOoek7mju_2ho2pC_QdoN6Lil7uKcKFQXu0ptJuHJrnM_O3yNt9G_H0B8P3Gz0sDDt3237o');
 
 			const config = {
 
