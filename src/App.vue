@@ -5,7 +5,7 @@
 			
 			<v-toolbar>
 				<v-toolbar-title class="flex text-center font-weight-black font-title">
-					Recomendaciones de música a partir del rostro de una persona
+					Recomendación de música a partir del rostro de una persona
 				</v-toolbar-title>
 			</v-toolbar>
 
@@ -79,7 +79,7 @@
 									<v-card flat>
 										<v-card-text>
 
-											<h3>Género de música</h3>										
+											<h3>Géneros de música</h3>										
 
 											<v-alert outlined color="#5EA6FF">
 												<v-container fluid class="scroll-card">													
@@ -408,20 +408,15 @@ export default {
 		/**
 		 * Cuando el usuario dé clic al botón de
 		 * "Limpiar búsqueda", se ejecutará esta
-		 * función para establecer el valor de la
-		 * variable "file" en nulo, y el arreglo de
-		 * checkboxes en un arreglo vacío.
+		 * función para restablecer ciertos valores.
 		 * 
 		 */
 		clear() {
 
-			this.checkboxes = [];
-
-			this.file = null;
-
+			this.file             = null;
+			this.checkboxes       = [];
 			this.emotionsDetected = [];
-
-			this.largeSize = false;
+			this.largeSize        = false;
 		},
 		/**
 		 * Si el usuario da clic al botón
@@ -433,8 +428,7 @@ export default {
 		 */
 		clearSuggestedSongs() {
 
-			this.suggestedSongs = [];
-
+			this.suggestedSongs      = [];
 			this.suggestedSongsReady = false;
 		},
 		/**
@@ -456,10 +450,7 @@ export default {
 
 			this.progressCircular = true;
 			
-			setTimeout(() => this.doAPICalls(dataForm), 50);		
-								
-
-			//console.log(this.emotionsDetected);
+			setTimeout(() => this.doAPICalls(dataForm), 50);
 		},
 		/**
 		 * 
@@ -480,8 +471,6 @@ export default {
 					throw 'The response of Microsoft Azure is empty';
 				}
 
-				console.log(responseAzure);
-
 				emotions = responseAzure.data[0].faceAttributes.emotion;					
 
 			} catch (error) {
@@ -501,28 +490,9 @@ export default {
 
 				let responseSpotify = await this.requestAPISpotify(dataRecommendation);
 
-				//tracks is an array.
-				//let artistName = responseSpotify.data.tracks[0].artists[0].name;
-				//let albumName  = responseSpotify.data.tracks[0].album.name;
-				//let uriSong    = responseSpotify.data.tracks[0].uri;
-				//let songName   = responseSpotify.data.tracks[0].name;
-				//let preUrl = responseSpotify.data.tracks[0].external_urls.spotify;
+				console.log(responseSpotify);
 				
-				//https://open.spotify.com/track/...				
-
-				let tracks = responseSpotify.data.tracks;
-
-				for (let i = 0; i < tracks.length; i++) {					
-
-					let urlSong = tracks[i].external_urls.spotify.slice(0, 25) + 'embed/' + tracks[i].external_urls.spotify.slice(25);
-
-					this.suggestedSongs.push({
-
-						id: i,
-						name: tracks[i].name,
-						link: urlSong
-					});
-				}		
+				this.addSongsToSuggestedList(responseSpotify.data.tracks);
 				
 				this.suggestedSongsReady = true;
 
@@ -534,6 +504,29 @@ export default {
 			this.progressCircular = false;
 
 			this.blockSubmitButton = false;
+		},
+		/**
+		 * Crea un objeto para cada canción, que contiene
+		 * el id, el nombre del artista y el link de la
+		 * canción en Spotify, para después agregarlo a un
+		 * arreglo de canciones sugeridas.
+		 * 
+		 * 
+		 * @param1 arreglo con las canciones y sus atributos.
+		 */
+		addSongsToSuggestedList(tracks) {			
+
+			for (let i = 0; i < tracks.length; i++) {					
+
+				let urlSong = tracks[i].external_urls.spotify.slice(0, 25) + 'embed/' + tracks[i].external_urls.spotify.slice(25);
+
+				this.suggestedSongs.unshift({
+
+					id: i,
+					name: tracks[i].artists[0].name,
+					link: urlSong
+				});
+			}
 		},
 		/**
 		 * A partir de las emociones y los géneros de música
@@ -562,10 +555,10 @@ export default {
 
 		
 			//Determinar la valencia de la canción (si es más o menos positiva).
-			let valance = calculateValance(emotionsAvailable);
+			//let valance = calculateValance(emotionsAvailable);
 
 			//Determinar el tempo de la canción.
-			let tempo = calculateTempo(emotionsAvailable);
+			//let tempo = calculateTempo(emotionsAvailable);
 			
 			return {
 
@@ -574,12 +567,12 @@ export default {
 
 				/*min_danceability: 0.0, //(0.0-1.0)
 				max_danceability: 1.0, //(0.0-1.0)*/
-				min_energy: 0.0, //(0.0-1.0)
-				max_energy: 1.0, //(0.0-1.0)
+				//min_energy: 0.0, //(0.0-1.0)
+				//max_energy: 1.0, //(0.0-1.0)
 				//loudness: 0.0, //(0.0-1.0)
-				valance: valance, //(0.0-1.0)
-				minTempo: tempo.min, //(40-200)
-				maxTempo: tempo.max //(40-200)
+				valance: 0.0, //(0.0-1.0)
+				minTempo: 40, //(40-200)
+				maxTempo: 60 //(40-200)
 			};
 		},
 		calculateValance(emotionsAvailable) {
@@ -602,25 +595,25 @@ export default {
 			//Valencia de emoción tristeza, enojo, desprecio, disgusto, y miedo.	
 			if (Object.keys(emotionsAvailable).length === 1 && 
 				(Object.keys(emotionsAvailable)[0].toString() === 'sadness'  ||
-				 Object.keys(emotionsAvailable)[0].toString() === 'angry'    || 
-				 Object.keys(emotionsAvailable)[0].toString() === 'contempt' ||
-				 Object.keys(emotionsAvailable)[0].toString() === 'disgust'  ||
-				 Object.keys(emotionsAvailable)[0].toString() === 'fear')) {
+				Object.keys(emotionsAvailable)[0].toString() === 'angry'    || 
+				Object.keys(emotionsAvailable)[0].toString() === 'contempt' ||
+				Object.keys(emotionsAvailable)[0].toString() === 'disgust'  ||
+				Object.keys(emotionsAvailable)[0].toString() === 'fear')) {
 
 				let emotion = Object.values(emotionsAvailable)[0];
 
 				return (emotion < 0.5) ? emotion : 1.0 - emotion;
 			}
 
-			return getValenceOfCombinationEmotion(emotionsAvailable);			
+			return this.getValenceOfCombinationEmotion(emotionsAvailable);			
 		},
 		getValenceOfCombinationEmotion(emotionsAvailable) {
 
 			//Regresa un arreglo de las llaves del objecto "emotionsAvailable".
-			let arrayEmotionsKeys   = Objects.keys(emotionsAvailable);
+			let arrayEmotionsKeys   = Object.keys(emotionsAvailable);
 
 			//Regresa un arreglo de los valores del objeto "emotionsAvailable".
-			let arrayEmotionsValues = Objects.values(emotionsAvailable); 
+			let arrayEmotionsValues = Object.values(emotionsAvailable); 
 
 
 			if (arrayEmotionsKeys.length === 3 && 
@@ -731,7 +724,10 @@ export default {
 			}
 		},
 		/**
-		 * 
+		 * Crea un objeto para cada emoción, el cual contiene
+		 * su representación a través de un emoji, y el porcentaje
+		 * de la emoción. Cada objeto se agregará una arreglo
+		 * de emociones detectadas.
 		 * 
 		 * @param1 emociones detectadas en el rostro de la persona.
 		 * 
@@ -807,7 +803,7 @@ export default {
 		requestAPISpotify(dataRecommendationParams) {
 
 			//Token de autenticación con Spotify. Se reinicia cada 1 hora.
-			const AUTH_STR = 'Bearer '.concat('BQDe9dd6nRG0aOoek7mju_2ho2pC_QdoN6Lil7uKcKFQXu0ptJuHJrnM_O3yNt9G_H0B8P3Gz0sDDt3237o');
+			const AUTH_STR = 'Bearer '.concat('BQAPOncqFBjLTAfu_sWmTr__JjJ3JgsEXjuyh5ntRBJHjsim1DH6WBIiJlpDoKbAP96O3NXBfmFkIvFtYKw');
 
 			const config = {
 
