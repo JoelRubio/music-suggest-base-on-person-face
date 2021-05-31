@@ -565,12 +565,25 @@ export default {
 			const emotionsAvailable = Object.fromEntries(arrayEmotions);
 			
 
+			//Establece el objeto con las propiedades de su representación y valor en porcentaje.
 			this.setEmotionsObject(emotionsAvailable);			
 
+			//Asigna los géneros de música que eligió el usuario.
 			this.attrSongs.seed_genres = gendersSelected;
 
+			//Establece los atributos que tendrán las canciones de acuerdo a los porcentajes
+			//de las emociones.
 			this.setAttrSongs(emotionsAvailable);
 		},
+		/**
+		 * Establece los atributos que tendrán las canciones
+		 * de acuerdo a los porcentajes de las emociones
+		 * del rostro de la persona. Los atributos son:
+		 * valencia, energía mínima y máxima, y el tempo
+		 * mínimo y máximo.
+		 * 
+		 * @param1 emociones del rostro de la persona
+		 */
 		setAttrSongs(emotions) {
 
 			if (emotions.hasOwnProperty('neutral'))
@@ -632,6 +645,16 @@ export default {
 
 			this.setAttrSongsWithMultipleEmotions(emotions);				
 		},
+		/**
+		 * Verifica si dentro de las emociones almacenadas
+		 * se encuentra 'happiness', si está, entonces 
+		 * se ejecutará la función para determinar los atributos
+		 * con emociones positivas y negativas, si no, se
+		 * ejecutará la función para emociones negativas.
+		 * 
+		 * 
+		 * @param1 emociones del rostro de la persona.
+		 */
 		setAttrSongsWithMultipleEmotions(emotions) {
 
 			console.log("Multiple emotions settings");
@@ -645,6 +668,15 @@ export default {
 				this.setAttrSongsWithNegativeEmotions(emotions);
 			}
 		},
+		/**
+		 * Establece los atributos que tendrán las canciones
+		 * de acuerdo a los porcentajes de las emociones
+		 * del rostro de la persona. Estas emociones se
+		 * clasificaron en positivas (felicidad) 
+		 * y negativas (enojo, tristeza, desprecio, disgusto, y miedo).
+		 * 
+		 * @param1 emociones del rostro de la persona.
+		 */
 		setAttrSongsWithPositiveAndNegativeEmotions(emotions) {
 
 			//Obtiene la propiedad 'happiness' del objeto 'emotions'.
@@ -673,6 +705,15 @@ export default {
 			this.attrSongs.min_tempo  = result - 10;
 			this.attrSongs.max_tempo  = result + 10;
 		},
+		/**
+		 * Establece los atributos que tendrán las canciones
+		 * de acuerdo a los porcentajes de las emociones
+		 * del rostro de la persona. Estas emociones se
+		 * clasificaron en emociones negativas
+		 * (enojo, tristeza, desprecio, disgusto, y miedo).
+		 * 
+		 * @param1 emociones del rostro de la persona.
+		 */
 		setAttrSongsWithNegativeEmotions(emotions) {
 
 			//Suma los valores del objeto "emotions", sin la emoción 'happiness'.
@@ -765,7 +806,7 @@ export default {
 		requestAPISpotify(dataRecommendationParams) {
 
 			//Token de autenticación con Spotify. Se reinicia cada 1 hora.
-			const AUTH_STR = 'Bearer '.concat('BQAPOncqFBjLTAfu_sWmTr__JjJ3JgsEXjuyh5ntRBJHjsim1DH6WBIiJlpDoKbAP96O3NXBfmFkIvFtYKw');
+			const AUTH_STR = 'Bearer '.concat('');
 
 			const config = {
 
