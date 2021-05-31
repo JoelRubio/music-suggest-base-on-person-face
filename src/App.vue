@@ -329,16 +329,16 @@ export default {
 				'rock',
 				'electronic',
 				'progressive-house',
-				'deep-house',							
+				'deep-house',
+				'hip-hop',
+				'metal',							
 				'french',
 				'spanish',
 				'british',
-				'metal',
+				'country',
+				'chill',
 				'jazz',
 				'dance',
-				'chill',				
-				'salsa',
-				'country'
 			],
 			suggestedSongs: [], //Arreglo para las canciones sugeridas por el API de Spotify.
 			attrSongs: {
@@ -348,11 +348,8 @@ export default {
 
 				limit: 10,       //(0-100)
 				seed_genres: '',
-				valence: 0.5,    //(0.0-1.0)
-				min_energy: 0.0, //(0.0-1.0)
-				max_energy: 1.0, //(0.0-1.0)
-				min_tempo: 0,
-				max_tempo: 200
+				min_valence: 0.0,    //(0.0-1.0)
+				max_valence: 1.0,				
 			}
 		}
 	},
@@ -460,13 +457,18 @@ export default {
 			};
 
 			this.blockSubmitButton = true;
+			this.progressCircular  = true;
 
-			this.progressCircular = true;
+			if (this.emotionsDetected.length != 0) {
+
+				this.emotionsDetected  = [];
+			}
 			
 			setTimeout(() => this.doAPICalls(dataForm), 50);
 		},
 		/**
-		 * 
+		 * Realiza las llamadas a las APIs de Microsoft Azure
+		 * y Spotify.
 		 * 
 		 * @param1 objeto con el archivo de la imagen y los checkboxes
 		 * 			del género de música que eligió el usuario.
@@ -500,10 +502,13 @@ export default {
 			
 			this.setDataRecommendation(emotions, data.genders.toString());
 
-			
+			console.log(this.attrSongs);
+
 			try {
 
 				let responseSpotify = await this.requestAPISpotify(this.attrSongs);
+
+				console.log(responseSpotify);
 				
 				this.addSongsToSuggestedList(responseSpotify.data.tracks);
 				
@@ -554,7 +559,8 @@ export default {
 		 * 
 		 * @return lista de variables para obtener recomendaciones
 		 *			por parte de Spotify-
-		 */
+		 energía mínima y máxima, y el tempo
+		 * mínimo y máximo.*/
 		setDataRecommendation(emotions, gendersSelected) {
 
 			const arrayObject = Object.entries(emotions);
@@ -579,45 +585,28 @@ export default {
 		 * Establece los atributos que tendrán las canciones
 		 * de acuerdo a los porcentajes de las emociones
 		 * del rostro de la persona. Los atributos son:
-		 * valencia, energía mínima y máxima, y el tempo
-		 * mínimo y máximo.
+		 * valencia mínima y máxima.
 		 * 
 		 * @param1 emociones del rostro de la persona
 		 */
 		setAttrSongs(emotions) {
 
-			if (emotions.hasOwnProperty('neutral'))
+			if (Object.prototype.hasOwnProperty.call(emotions, 'neutral'))
 				delete emotions.neutral;
 
-			if (emotions.hasOwnProperty('surprise'))
+			if (Object.prototype.hasOwnProperty.call(emotions, 'surprise'))
 				delete emotions.surprise;
 
 
 			if (Object.keys(emotions).length === 0)
-				return;
-
-			/*
-				Largo (very slow) is 40–60 BPM.		   (maybe sadness)
-				Larghetto (less slow) is 60–66 BPM.	   (maybe sadness)
-				Adagio (moderately slow) is 66–76 BPM. 
-				Andante (walking speed) is 76–108 BPM.  (maybe happy)
-				Moderato (moderate) is 108–120 BPM.	   (neutral)
-				Allegro (fast) is 120–168 BPM.		   (maybe happy depending the percent)
-				Presto (faster) is 168–200 BPM.		   (maybe happy, angry and disgust depending the percent)
-				Prestissimo (even faster) is 200+ BPM. (maybe angry and disgust depending the percent)
-			*/
+				return;			
 
 	
 			if (Object.keys(emotions).length === 1 && 
 				Object.keys(emotions)[0].toString() === 'happiness') {
 
-				this.attrSongs.valence    = Object.values(emotions)[0];
-				this.attrSongs.min_energy = Object.values(emotions)[0];
-				this.attrSongs.max_energy = Object.values(emotions)[0];
-				this.attrSongs.min_tempo  = 120;
-				this.attrSongs.max_tempo  = 168;
-
-				console.log("Happiness settings");
+				this.attrSongs.min_valence = 0.5;
+				this.attrSongs.max_valence = 1.0;
 
 				return;
 			}
@@ -628,17 +617,12 @@ export default {
 						Object.keys(emotions)[0].toString() === 'disgust'  ||
 						Object.keys(emotions)[0].toString() === 'fear')) {
 
-				console.log("sadness, angry, etc., settings");
-
 				let emotion = Object.values(emotions)[0];
 
 				let emotionValue = (emotion < 0.5) ? emotion : 1.0 - emotion;
 
-				this.attrSongs.valence    = emotionValue;
-				this.attrSongs.min_energy = emotionValue;
-				this.attrSongs.max_energy = emotionValue;
-				this.attrSongs.min_tempo  = 40;
-				this.attrSongs.max_tempo  = 60;
+				this.attrSongs.min_valence = emotionValue;
+				this.attrSongs.max_valence = 0.5;
 
 				return;
 			}
@@ -659,7 +643,7 @@ export default {
 
 			console.log("Multiple emotions settings");
 
-			if (emotions.hasOwnProperty('happiness')) {
+			if (Object.prototype.hasOwnProperty.call(emotions, 'happiness')) {
 
 				this.setAttrSongsWithPositiveAndNegativeEmotions(emotions);
 
@@ -694,16 +678,16 @@ export default {
 
 				result = positiveEmotion - negativeEmotions;
 
+				this.attrSongs.max_valence = 1.0;
+
 			} else {
 
 				result = negativeEmotions - positiveEmotion;
+
+				this.attrSongs.max_valence = 0.5;
 			}
 
-			this.attrSongs.valence    = result;
-			this.attrSongs.min_energy = result;
-			this.attrSongs.max_energy = result;
-			this.attrSongs.min_tempo  = result - 10;
-			this.attrSongs.max_tempo  = result + 10;
+			this.attrSongs.min_valence = result;
 		},
 		/**
 		 * Establece los atributos que tendrán las canciones
@@ -722,13 +706,17 @@ export default {
 			if (negativeEmotions > 0.5) {
 
 				negativeEmotions = 1.0 - negativeEmotions;
-			}
 
-			this.attrSongs.valence    = negativeEmotions;
-			this.attrSongs.min_energy = negativeEmotions;
-			this.attrSongs.max_energy = negativeEmotions;
-			this.attrSongs.min_tempo  = negativeEmotions - 10;
-			this.attrSongs.max_tempo  = negativeEmotions + 10;
+				this.attrSongs.min_valence = 0.0;
+
+				this.attrSongs.max_valence = negativeEmotions;
+
+			} else {
+
+				this.attrSongs.min_valence = negativeEmotions;
+
+				this.attrSongs.max_valence = 0.5;
+			}
 		},
 		/**
 		 * Crea un objeto para cada emoción, el cual contiene
@@ -806,7 +794,7 @@ export default {
 		requestAPISpotify(dataRecommendationParams) {
 
 			//Token de autenticación con Spotify. Se reinicia cada 1 hora.
-			const AUTH_STR = 'Bearer '.concat('');
+			const AUTH_STR = 'Bearer '.concat('BQCIYf0bVH2DIJr-Mjq-KE_lNK7vQNyp6_5zStCHGB7C_e1Xw9a0PWlKGmaWOb8UkOXttgsCamA6pqTw2uQ');
 
 			const config = {
 
