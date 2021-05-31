@@ -791,7 +791,7 @@ export default {
 		async requestAPIAzure(imgFile) {
 
 			//Clave de suscripción con Microsoft Azure.
-			const SUB_KEY = '5a1b891888e1413ca3340a187c2f6f91';
+			const SUB_KEY = '';
 
 			return axios({
 
@@ -820,7 +820,7 @@ export default {
 		requestAPISpotify(dataRecommendationParams) {
 
 			//Token de autenticación con Spotify. Se reinicia cada 1 hora.
-			const AUTH_STR = 'Bearer '.concat('BQCIYf0bVH2DIJr-Mjq-KE_lNK7vQNyp6_5zStCHGB7C_e1Xw9a0PWlKGmaWOb8UkOXttgsCamA6pqTw2uQ');
+			const AUTH_STR = 'Bearer '.concat('');
 
 			const config = {
 
