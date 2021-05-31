@@ -413,7 +413,10 @@ export default {
 
 			this.imgUrl = URL.createObjectURL(this.file);
 
-			this.emotionsDetected = [];
+			if (this.emotionsDetected.length != 0) {
+
+				this.emotionsDetected = [];
+			}
 		},
 		/**
 		 * Cuando el usuario dé clic al botón de
@@ -558,9 +561,8 @@ export default {
 		 * @param2 géneros de música elegidos por el usuario.
 		 * 
 		 * @return lista de variables para obtener recomendaciones
-		 *			por parte de Spotify-
-		 energía mínima y máxima, y el tempo
-		 * mínimo y máximo.*/
+		 *			por parte de Spotify.
+		 */
 		setDataRecommendation(emotions, gendersSelected) {
 
 			const arrayObject = Object.entries(emotions);
