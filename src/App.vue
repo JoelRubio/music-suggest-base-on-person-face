@@ -340,7 +340,20 @@ export default {
 				'salsa',
 				'country'
 			],
-			suggestedSongs: [] //Arreglo para las canciones sugeridas por el API de Spotify.
+			suggestedSongs: [], //Arreglo para las canciones sugeridas por el API de Spotify.
+			attrSongs: {
+
+				/* Atributos de las canciones para 
+				obtener recomendaciones por parte del API de Spotify. */
+
+				limit: 10,       //(0-100)
+				seed_genres: '',
+				valence: 0.5,    //(0.0-1.0)
+				min_energy: 0.0, //(0.0-1.0)
+				max_energy: 1.0, //(0.0-1.0)
+				min_tempo: 0,
+				max_tempo: 200
+			}
 		}
 	},
 	methods: {
@@ -471,6 +484,8 @@ export default {
 					throw 'The response of Microsoft Azure is empty';
 				}
 
+				console.log(responseAzure);
+
 				emotions = responseAzure.data[0].faceAttributes.emotion;					
 
 			} catch (error) {
@@ -483,14 +498,12 @@ export default {
 			}
 
 			
-			let dataRecommendation = this.getDataRecommendation(emotions, data.genders);
+			this.setDataRecommendation(emotions, data.genders.toString());
 
 			
 			try {
 
-				let responseSpotify = await this.requestAPISpotify(dataRecommendation);
-
-				console.log(responseSpotify);
+				let responseSpotify = await this.requestAPISpotify(this.attrSongs);
 				
 				this.addSongsToSuggestedList(responseSpotify.data.tracks);
 				
@@ -520,6 +533,7 @@ export default {
 
 				let urlSong = tracks[i].external_urls.spotify.slice(0, 25) + 'embed/' + tracks[i].external_urls.spotify.slice(25);
 
+				//Coloca cada objeto al inicio del arreglo.
 				this.suggestedSongs.unshift({
 
 					id: i,
@@ -541,7 +555,7 @@ export default {
 		 * @return lista de variables para obtener recomendaciones
 		 *			por parte de Spotify-
 		 */
-		getDataRecommendation(emotions, gendersSelected) {
+		setDataRecommendation(emotions, gendersSelected) {
 
 			const arrayObject = Object.entries(emotions);
 
@@ -549,157 +563,25 @@ export default {
 			const arrayEmotions = arrayObject.filter(([key, value]) => value > 0.0);			
 
 			const emotionsAvailable = Object.fromEntries(arrayEmotions);
-									
 			
+
 			this.setEmotionsObject(emotionsAvailable);			
 
-		
-			//Determinar la valencia de la canción (si es más o menos positiva).
-			//let valance = calculateValance(emotionsAvailable);
+			this.attrSongs.seed_genres = gendersSelected;
 
-			//Determinar el tempo de la canción.
-			//let tempo = calculateTempo(emotionsAvailable);
-			
-			return {
-
-				limit: 10, //(0-100)
-				seed_genres: gendersSelected.length > 0 ? gendersSelected.toString() : this.genders.toString(), 
-
-				/*min_danceability: 0.0, //(0.0-1.0)
-				max_danceability: 1.0, //(0.0-1.0)*/
-				//min_energy: 0.0, //(0.0-1.0)
-				//max_energy: 1.0, //(0.0-1.0)
-				//loudness: 0.0, //(0.0-1.0)
-				valance: 0.0, //(0.0-1.0)
-				minTempo: 40, //(40-200)
-				maxTempo: 60 //(40-200)
-			};
+			this.setAttrSongs(emotionsAvailable);
 		},
-		calculateValance(emotionsAvailable) {
+		setAttrSongs(emotions) {
 
-			//Valencia de emoción neutral.			
-			if (Object.keys(emotionsAvailable).length === 1 && 
-				Object.keys(emotionsAvailable)[0].toString() === 'neutral' ||
-				Object.keys(emotionsAvailable)[0].toString() === 'surprise') {
+			if (emotions.hasOwnProperty('neutral'))
+				delete emotions.neutral;
 
-				return 0.5;
-			}
-
-			//Valencia de emoción felicidad.	
-			if (Object.keys(emotionsAvailable).length === 1 && 
-				Object.keys(emotionsAvailable)[0].toString() === 'happiness') {
-
-				return Object.values(emotionsAvailable)[0];
-			}
-
-			//Valencia de emoción tristeza, enojo, desprecio, disgusto, y miedo.	
-			if (Object.keys(emotionsAvailable).length === 1 && 
-				(Object.keys(emotionsAvailable)[0].toString() === 'sadness'  ||
-				Object.keys(emotionsAvailable)[0].toString() === 'angry'    || 
-				Object.keys(emotionsAvailable)[0].toString() === 'contempt' ||
-				Object.keys(emotionsAvailable)[0].toString() === 'disgust'  ||
-				Object.keys(emotionsAvailable)[0].toString() === 'fear')) {
-
-				let emotion = Object.values(emotionsAvailable)[0];
-
-				return (emotion < 0.5) ? emotion : 1.0 - emotion;
-			}
-
-			return this.getValenceOfCombinationEmotion(emotionsAvailable);			
-		},
-		getValenceOfCombinationEmotion(emotionsAvailable) {
-
-			//Regresa un arreglo de las llaves del objecto "emotionsAvailable".
-			let arrayEmotionsKeys   = Object.keys(emotionsAvailable);
-
-			//Regresa un arreglo de los valores del objeto "emotionsAvailable".
-			let arrayEmotionsValues = Object.values(emotionsAvailable); 
+			if (emotions.hasOwnProperty('surprise'))
+				delete emotions.surprise;
 
 
-			if (arrayEmotionsKeys.length === 3 && 
-				arrayEmotionsValues[0] > arrayEmotionsValues[1] ||
-				arrayEmotionsValues[0] > arrayEmotionsValues[2]) {
-				
-
-				if (arrayEmotionsValues[1] > 0.0 &&
-					arrayEmotionsValues[2] > 0.0) {
-
-					let combinationEmotion = arrayEmotionsValues[1] + arrayEmotionsValues[2];
-
-					if (combinationEmotion > arrayEmotionsValues[0]){
-
-						return arrayEmotionsValues[0] - (combinationEmotion / 2.0);
-					} 
-					else {
-
-						return arrayEmotionsValues[0] - combinationEmotion;
-					}					
-
-				} else if (arrayEmotionsValues[1] > 0.0) {
-
-					let combinationEmotion = arrayEmotionsValues[0] - arrayEmotionsValues[1];
-
-					return combinationEmotion > 0.0 ? combinationEmotion : 0.0;
-
-				} else if (arrayEmotionsValues[2] > 0.0) {
-
-					let combinationEmotion = arrayEmotionsValues[0] - arrayEmotionsValues[2];
-
-					return combinationEmotion > 0.0 ? combinationEmotion : 0.0;
-				}
-			}
-			
-			return 0.5;
-
-			/*
-			//Valencia de enojo.
-			if (emotionsAvailable.angry > emotionsAvailable.happiness ||
-				emotionsAvailable.angry > emotionsAvailable.sadness) {
-
-				if (emotionsAvailable.hapiness > 0.0 &&
-					emotionsAvailable.sadness > 0.0) {
-
-					return emotionsAvailable.angry + emotionsAvailable.sadness - emotionsAvailable.happiness;
-
-				} else if (emotionsAvailable.sadness > 0.0) {
-
-					let combinationEmotion = emotionsAvailable.angry + emotionsAvailable.sadness; 
-
-					return combinationEmotion < 99.99 ? combinationEmotion : 99.99;
-
-				} else if (emotionsAvailable.happiness > 0.0) {
-
-					let combinationEmotion = emotionsAvailable.angry - emotionsAvailable.happiness; 
-
-					return combinationEmotion > 0.0 ? combinationEmotion : 0.0;
-				}
-			}
-
-			//Valencia tristeza
-			if (emotionsAvailable.sandess > emotionsAvailable.happiness ||
-				emotionsAvailable.sadness > emotionsAvailable.angry) {
-
-				if (emotionsAvailable.hapiness > 0.0 &&
-					emotionsAvailable.angry > 0.0) {
-
-					return emotionsAvailable.sadness + emotionsAvailable.angry - emotionsAvailable.happiness;
-
-				} else if (emotionsAvailable.angry > 0.0) {
-
-					let combinationEmotion = emotionsAvailable.sadness + emotionsAvailable.angry; 
-
-					return combinationEmotion < 99.99 ? combinationEmotion : 99.99;
-
-				} else if (emotionsAvailable.happiness > 0.0) {
-
-					let combinationEmotion = emotionsAvailable.sadness - emotionsAvailable.happiness; 
-
-					return combinationEmotion > 0.0 ? combinationEmotion : 0.0;
-				}
-			}*/
-		
-		},
-		calculateTempo(emotionsAvailable) {
+			if (Object.keys(emotions).length === 0)
+				return;
 
 			/*
 				Largo (very slow) is 40–60 BPM.		   (maybe sadness)
@@ -712,16 +594,100 @@ export default {
 				Prestissimo (even faster) is 200+ BPM. (maybe angry and disgust depending the percent)
 			*/
 
-			let tempo = {
+	
+			if (Object.keys(emotions).length === 1 && 
+				Object.keys(emotions)[0].toString() === 'happiness') {
 
-				min: 0.0,
-				max: 1.0
-			};
-			
-			if (emotionsAvailable.neutral > 0.0) {
+				this.attrSongs.valence    = Object.values(emotions)[0];
+				this.attrSongs.min_energy = Object.values(emotions)[0];
+				this.attrSongs.max_energy = Object.values(emotions)[0];
+				this.attrSongs.min_tempo  = 120;
+				this.attrSongs.max_tempo  = 168;
 
-				return tempo;
+				console.log("Happiness settings");
+
+				return;
 			}
+			else if (Object.keys(emotions).length === 1 && 
+						(Object.keys(emotions)[0].toString() === 'sadness' ||
+						Object.keys(emotions)[0].toString() === 'angry'    || 
+						Object.keys(emotions)[0].toString() === 'contempt' ||
+						Object.keys(emotions)[0].toString() === 'disgust'  ||
+						Object.keys(emotions)[0].toString() === 'fear')) {
+
+				console.log("sadness, angry, etc., settings");
+
+				let emotion = Object.values(emotions)[0];
+
+				let emotionValue = (emotion < 0.5) ? emotion : 1.0 - emotion;
+
+				this.attrSongs.valence    = emotionValue;
+				this.attrSongs.min_energy = emotionValue;
+				this.attrSongs.max_energy = emotionValue;
+				this.attrSongs.min_tempo  = 40;
+				this.attrSongs.max_tempo  = 60;
+
+				return;
+			}
+
+			this.setAttrSongsWithMultipleEmotions(emotions);				
+		},
+		setAttrSongsWithMultipleEmotions(emotions) {
+
+			console.log("Multiple emotions settings");
+
+			if (emotions.hasOwnProperty('happiness')) {
+
+				this.setAttrSongsWithPositiveAndNegativeEmotions(emotions);
+
+			} else {
+
+				this.setAttrSongsWithNegativeEmotions(emotions);
+			}
+		},
+		setAttrSongsWithPositiveAndNegativeEmotions(emotions) {
+
+			//Obtiene la propiedad 'happiness' del objeto 'emotions'.
+			let positiveEmotion = ((({happiness}) => ({happiness}))(emotions)).happiness;
+
+			//Elimina la propiedad 'happiness' del objeto 'emotions'.
+			delete emotions.happiness;
+
+			//Suma los valores del objeto "emotions".
+			let negativeEmotions = Object.values(emotions).reduce((a, b) => a + b, 0);
+
+			let result;
+
+			if (positiveEmotion > negativeEmotions) {
+
+				result = positiveEmotion - negativeEmotions;
+
+			} else {
+
+				result = negativeEmotions - positiveEmotion;
+			}
+
+			this.attrSongs.valence    = result;
+			this.attrSongs.min_energy = result;
+			this.attrSongs.max_energy = result;
+			this.attrSongs.min_tempo  = result - 10;
+			this.attrSongs.max_tempo  = result + 10;
+		},
+		setAttrSongsWithNegativeEmotions(emotions) {
+
+			//Suma los valores del objeto "emotions", sin la emoción 'happiness'.
+			let negativeEmotions = Object.values(emotions).reduce((a, b) => a + b, 0);
+
+			if (negativeEmotions > 0.5) {
+
+				negativeEmotions = 1.0 - negativeEmotions;
+			}
+
+			this.attrSongs.valence    = negativeEmotions;
+			this.attrSongs.min_energy = negativeEmotions;
+			this.attrSongs.max_energy = negativeEmotions;
+			this.attrSongs.min_tempo  = negativeEmotions - 10;
+			this.attrSongs.max_tempo  = negativeEmotions + 10;
 		},
 		/**
 		 * Crea un objeto para cada emoción, el cual contiene
@@ -737,26 +703,22 @@ export default {
 		 */
 		setEmotionsObject(emotionsAvailable) {
 			
-
-			return new Promise((resolve) => {
-
-				resolve(this.emotions.forEach(emotion => {
+			this.emotions.forEach(emotion => {
 				
-					for (let [emotionKey, emotionValue] of Object.entries(emotion)) {							
+				for (let [emotionKey, emotionValue] of Object.entries(emotion)) {							
 
-						for (let [emotionAvailableKey, emotionAvailableValue] of Object.entries(emotionsAvailable)) {									
+					for (let [emotionAvailableKey, emotionAvailableValue] of Object.entries(emotionsAvailable)) {									
 
-							if (emotionKey.toString() === emotionAvailableKey.toString()) {
-																											
-								this.emotionsDetected.push({
-																	
-									emoji: emotionValue,
-									percent: (emotionAvailableValue * 100).toFixed(2)
-								});							
-							}
-						}				
-					}
-				}));
+						if (emotionKey.toString() === emotionAvailableKey.toString()) {
+																										
+							this.emotionsDetected.push({
+																
+								emoji: emotionValue,
+								percent: (emotionAvailableValue * 100).toFixed(2)
+							});							
+						}
+					}				
+				}
 			});
 		},
 		/**
