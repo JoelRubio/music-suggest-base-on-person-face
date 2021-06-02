@@ -524,7 +524,7 @@ export default {
 
 				if (responseAzure.data.length === 0) {
 
-					throw 'La respuesta de Microsoft Azure está vacía';
+					throw 'No se encontraron coincidencias con el rostro de la persona';
 				}
 
 				emotions = responseAzure.data[0].faceAttributes.emotion;					
