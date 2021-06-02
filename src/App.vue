@@ -513,8 +513,6 @@ export default {
 					throw 'The response of Microsoft Azure is empty';
 				}
 
-				console.log(responseAzure);
-
 				emotions = responseAzure.data[0].faceAttributes.emotion;					
 
 			} catch (error) {
@@ -534,8 +532,6 @@ export default {
 			try {
 
 				let responseSpotify = await this.requestAPISpotify(this.attrSongs);
-
-				console.log(responseSpotify);
 				
 				this.addSongsToSuggestedList(responseSpotify.data.tracks);
 				
@@ -666,8 +662,6 @@ export default {
 		 * @param1 emociones del rostro de la persona.
 		 */
 		setAttrSongsWithMultipleEmotions(emotions) {
-
-			console.log("Multiple emotions settings");
 
 			if (Object.prototype.hasOwnProperty.call(emotions, 'happiness')) {
 
