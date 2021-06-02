@@ -196,13 +196,24 @@ SOFTWARE.
 									<v-divider></v-divider>																			
 								</v-container>
 		
-								<v-container fluid v-if="progressCircular" class="progress-circular">
-														
+								<v-container fluid v-if="progressCircular" class="progress-circular">														
 									<v-progress-circular
 										:size="50"
 										indeterminate
 										color="#7CE495">									
 									</v-progress-circular>
+								</v-container>
+								
+								<v-container fluid>
+									<v-alert
+										v-model="alert"
+										dismissible
+										color="#7CE495"
+										border="left"
+										elevation="2"
+										colored-border>										
+										{{ this.emptyTracksMessage }}
+									</v-alert>
 								</v-container>
 
 								<v-list subheader v-if="suggestedSongsReady" :class="largeSize ? 'scroll-height' : 'normal-height'">																		
@@ -305,6 +316,8 @@ export default {
 			largeSize: false,
 			progressCircular: false,
 			blockSubmitButton: false,
+			alert: false,
+			emptyTracksMessage: '',
 			validation: {
 
 				fillImage: false,			
@@ -483,6 +496,7 @@ export default {
 				genders: this.checkboxes
 			};
 
+			this.alert             = false;
 			this.blockSubmitButton = true;
 			this.progressCircular  = true;
 
@@ -510,7 +524,7 @@ export default {
 
 				if (responseAzure.data.length === 0) {
 
-					throw 'The response of Microsoft Azure is empty';
+					throw 'La respuesta de Microsoft Azure está vacía';
 				}
 
 				emotions = responseAzure.data[0].faceAttributes.emotion;					
@@ -533,13 +547,22 @@ export default {
 
 				let responseSpotify = await this.requestAPISpotify(this.attrSongs);
 				
+				if (responseSpotify.data.tracks.length == 0) {
+
+					throw 'No se encontraron coincidencias con la búsqueda';
+				}
+				
 				this.addSongsToSuggestedList(responseSpotify.data.tracks);
 				
 				this.suggestedSongsReady = true;
 
 			} catch (error) {
 
-				console.log(error);			
+				console.log(error);
+				
+				this.emptyTracksMessage = error;
+
+				this.alert = true;
 			}	
 
 			this.progressCircular = false;
